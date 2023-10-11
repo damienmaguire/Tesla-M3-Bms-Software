@@ -122,13 +122,13 @@ extern "C" int main(void)
 
    while(1)
    {
-      char c = 0;
+   //   char c = 0;
       t.Run();
-      if (canMap->GetPrintRequest() == PRINT_JSON)
-      {
-         TerminalCommands::PrintParamsJson(canMap, &c);
-         canMap->SignalPrintComplete();
-      }
+   //   if (canMap->GetPrintRequest() == PRINT_JSON)
+   //   {
+   //      TerminalCommands::PrintParamsJson(canMap, &c);
+   //      canMap->SignalPrintComplete();
+   //   }
    }
 
 
