@@ -1,28 +1,46 @@
 #include "BatMan.h"
 
+/*
+Most of these are guesses based on the LTC6813 datasheet and spi captures. Command bytes are of course different for MuskChip
+https://www.analog.com/media/en/technical-documentation/data-sheets/ltc6813-1.pdf
+Wake up = 0x2AD4
+Unmute = 0x21F2
+Snapshot = 0x2BFB
+Read A = 0x4700
+Read B = 0x4800
+Read C = 0x4900
+Read D = 0x4A00
+Read E = 0x4B00
+Read F = 0x4C00
+Read Aux A = 0x4D00
+Read Aux B = 0x4E00
+Read Aux B No Tag = 0x0E00
+Read Status Reg = 0x4F00
+Read Config = 0x5000
+*/
+
 uint16_t WakeUp[2] = {0x2ad4, 0x0000};
-uint16_t Com[2] = {0x21f2, 0x4d00};
-uint16_t Com2[2] = {0x2BFB, 0x0000};
-uint16_t send5 = 0x0008;
+uint16_t Unmute[2] = {0x21f2, 0x4d00};
+uint16_t Snap[2] = {0x2BFB, 0x0000};
 uint16_t reqTemp = 0x0E1B;
 uint16_t sendX[2] = {0x0000, 0x0000}; //place holder array for random messages
-uint16_t req47[2] = {0x4700, 0x7000};
-uint16_t req48[2] = {0x4800, 0x3400} ;
-uint16_t req49[2] = {0x4900, 0xdd00};
-uint16_t req4a[2] = {0x4a00, 0xc900};
-uint16_t req4b[2] = {0x4b00, 0x2000};
-uint16_t req4c[2] = {0x4c00, 0xe100};
-uint16_t req4d[2] = {0x4D00, 0x0800};
-uint16_t req4e[2] = {0x4E00, 0x3300};
-uint16_t req4f[2] = {0x4F00, 0xF500};
-uint16_t req50[2] = {0x5000, 0x9400};
+uint16_t readA[2] = {0x4700, 0x7000};
+uint16_t readB[2] = {0x4800, 0x3400};
+uint16_t readC[2] = {0x4900, 0xdd00};
+uint16_t readD[2] = {0x4a00, 0xc900};
+uint16_t readE[2] = {0x4b00, 0x2000};
+uint16_t readF[2] = {0x4c00, 0xe100};
+uint16_t auxA[2] = {0x4D00, 0x0800};
+uint16_t auxB[2] = {0x4E00, 0x3300};
+uint16_t statR[2] = {0x4F00, 0xF500};
+uint16_t cfgR[2] = {0x5000, 0x9400};
 uint16_t padding = 0x0000;
-uint16_t Request_A = 0x0000;
-uint16_t Request_B = 0x0000;
 uint16_t receive1 = 0;
 uint16_t receive2 = 0;
 float tempval1 = 0;
 float tempval2 = 0;
+float temp1 = 0;
+float temp2 = 0;
 uint8_t  Fluffer[72];
 uint16_t FlufferT[24][2];
 uint8_t count1 = 0;
@@ -57,30 +75,26 @@ void BATMan::loop()
     {
     LoopTimer1 = 5;
     WakeUP();//send wake up 4 times for 4 bmb boards
-    WakeUP();
-    WakeUP();
-    WakeUP();
-    Generic_Send_Once(Com, 2);//unmute
-    WakeUP();
-    GetData(req4d, 0x4D);//Read Aux A
-    GetData(req4e, 0x4E);//Read Aux B
-    GetData(req4e, 0x4E);//Read Aux B
-    GetData(req50, 0x50);//Read Cfg
-    Generic_Send_Once(Com2, 1);//Take a snapshot of the cell voltages
+    Generic_Send_Once(Unmute, 2);//unmute
+    GetData(auxA, 0x4D);//Read Aux A
+    GetData(auxB, 0x4E);//Read Aux B. Temps in Aux B
+    GetData(auxB, 0x4E);//Read Aux B
+    GetData(cfgR, 0x50);//Read Cfg
+    Generic_Send_Once(Snap, 1);//Take a snapshot of the cell voltages
     delay(100);
-    Generic_Send_Once(Com2, 1);//Take a snapshot of the cell voltages
-    GetData(req4f, 0x4F);//Read status
-    GetData(req4f, 0x4F);//Read status
-    GetData(req47, 0x47);//Read A
-    GetData(req48, 0x48);//Read B
-    GetData(req49, 0x49);//Read C
-    GetData(req4a, 0x4A);//Read D
-    GetData(req4b, 0x4B);//Read E
-    GetData(req4c, 0x4C);//Read F
-    Generic_Send_Once(Com, 2);//Snapshot
+    Generic_Send_Once(Snap, 1);//Take a snapshot of the cell voltages
+    GetData(statR, 0x4F);//Read status reg
+    GetData(statR, 0x4F);//Read status reg
+    GetData(readA, 0x47);//Read A. Contains Cell voltage measurements
+    GetData(readB, 0x48);//Read B. Contains Cell voltage measurements
+    GetData(readC, 0x49);//Read C. Contains Cell voltage measurements
+    GetData(readD, 0x4A);//Read D. Contains Cell voltage measurements
+    GetData(readE, 0x4B);//Read E. Contains Cell voltage measurements
+    GetData(readF, 0x4C);//Read F
+    Generic_Send_Once(Unmute, 2);//unmute
     delay(100);
-    Generic_Send_Once(Com, 2);//Snapshot
-    GetTempData();
+    Generic_Send_Once(Unmute, 2);//unmute
+    GetTempData();//Request temps
     upDateVolts();
     upDateTemps();
     }
@@ -103,8 +117,6 @@ void BATMan::GetData(uint16_t Request[2], uint8_t ReqID)
 
   uint16_t tempvol = 0;
 
-//  if (Fluffer != 0xffff)
- // {
     switch (ReqID)
     {
       case 0x47:
@@ -284,7 +296,9 @@ tempval1=Temps[0][g*3+1];
          }
 Param::SetFloat((Param::PARAM_NUM)(Param::t0 + g), tempval2);
 }
-
+temp1=Param::GetFloat(Param::t0);
+temp2=Param::GetFloat(Param::t1);
+Param::SetFloat(Param::temp,MAX(temp1,temp2));
 
 }
 

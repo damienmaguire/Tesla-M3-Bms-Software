@@ -2,12 +2,14 @@
 #define BATMan_h
 
 /*  This library supports SPI communication for the Tesla Model 3 BMB (battery managment boards) "Batman" chip
-
+    Model 3 packs are comprised of 2 short modules with 23 cells and 2 long modules with 25 cells for a total of 96 cells.
+    A short bmb will only report 23 voltage values where as a long will report 25.
 */
 #include <libopencm3/stm32/spi.h>
 #include <stdint.h>
 #include "params.h"
 #include "digio.h"
+#include "my_math.h"
 
 
 class BATMan
