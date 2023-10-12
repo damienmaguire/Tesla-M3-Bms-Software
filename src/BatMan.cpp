@@ -22,7 +22,7 @@ Read Config = 0x5000
 uint16_t WakeUp[2] = {0x2ad4, 0x0000};
 uint16_t Unmute[2] = {0x21f2, 0x4d00};
 uint16_t Snap[2] = {0x2BFB, 0x0000};
-uint16_t reqTemp = 0x0E1B;
+uint16_t reqTemp = 0x0E1B;//Temps returned in words 1 and 5
 uint16_t sendX[2] = {0x0000, 0x0000}; //place holder array for random messages
 uint16_t readA[2] = {0x4700, 0x7000};
 uint16_t readB[2] = {0x4800, 0x3400};
@@ -59,12 +59,7 @@ uint16_t Voltage[8][15] = {
   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-uint16_t Temps [4][6] = {
-  {0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 0, 0, 0},
-};
+uint16_t Temps [8] = {0};
 
 
 
@@ -204,39 +199,13 @@ void BATMan::GetTempData ()  //request
 {
   DigIo::BatCS.Clear();
   receive1 = spi_xfer(SPI1, reqTemp);  // do a transfer
-  count1=0;
-  count2=0;
   for (count3 = 0; count3 < 32; count3 ++)
   {
     receive1 = spi_xfer(SPI1, padding);  // do a transfer
-    count1++;
-    if (count1<4)
-     {
-      //Fluffer[count2][0] =receive1;
-      FlufferT[count2][0] = receive1 >> 8;
-      FlufferT[count2][1] = receive1 & 0xFF;
-      count2++;
-     }
-    else count1=0;
+    if(count3==1) Temps[0]=receive1;//temperature 1
+    if(count3==5) Temps[1]=receive1;//temperature 1
   }
    DigIo::BatCS.Set();
-   uint16_t tempval = 0;
-  if (FlufferT[0][1] != 0xff)
-  {
-    for (int p = 0; p < 4; p++)   //pack
-    {
-      for (int c = 0; c < 6; c++)  //sens
-        {
-           if (FlufferT[p*6+c][1] != 0xff)
-            {
-              //tempvol = 0xC412;
-              //tempvol = Fluffer[p*6+c][0];
-              tempval = FlufferT[p*6+c][1] * 256 + FlufferT [p*6+c] [0];
-              Temps[p][c] = tempval;
-            }
-        }
-    }
-  }
 
    delay(200);
 }
@@ -282,7 +251,7 @@ void BATMan::upDateTemps(void)
 {
 for (int g = 0; g < 2; g++)
 {
-tempval1=Temps[0][g*3+1];
+tempval1=rev16(Temps[g]);//bytes swapped in the 16 bit words
          if (tempval1 >= (1131))
           {
           tempval1 = tempval1-1131;

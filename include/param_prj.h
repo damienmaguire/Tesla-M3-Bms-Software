@@ -47,7 +47,7 @@
    3. Display values
  */
 //Next param id (increase when adding new parameter!): 8
-//Next value Id: 2045
+//Next value Id: 2047
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     type,        TYPES,     0,      1,      0,      1   ) \
@@ -99,7 +99,9 @@
     VALUE_ENTRY(t1,          "°C",   2041 ) \
     VALUE_ENTRY(t2,          "°C",   2042 ) \
     VALUE_ENTRY(t3,          "°C",   2043 ) \
-    VALUE_ENTRY(cpuload,     "%",    2044 )
+    VALUE_ENTRY(t4,          "°C",   2044 ) \
+    VALUE_ENTRY(t5,          "°C",   2045 ) \
+    VALUE_ENTRY(cpuload,     "%",    2046 )
 
 
 /***** Enum String definitions *****/
