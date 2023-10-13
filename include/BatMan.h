@@ -33,8 +33,8 @@ private:
        static       void GetTempData();
        static       void upDateVolts(void);
        static       void upDateTemps(void);
-       static       uint16_t rev16(uint16_t x) {return (x << 8) | (x >>8);
-}
+       static       uint16_t rev16(uint16_t x) {return (x << 8) | (x >>8);}
+       static       void GetAuxData (uint16_t Request[2], uint8_t ReqID);
 };
 
 #endif /* BATMan_h */
