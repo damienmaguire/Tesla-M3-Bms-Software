@@ -202,8 +202,20 @@ void BATMan::GetTempData ()  //request
   for (count3 = 0; count3 < 32; count3 ++)
   {
     receive1 = spi_xfer(SPI1, padding);  // do a transfer
+    if(receive1 != 0xFFFF)
+    {
     if(count3==1) Temps[0]=receive1;//temperature 1
-    if(count3==5) Temps[1]=receive1;//temperature 1
+    if(count3==5) Temps[1]=receive1;//temperature 2
+    if(count3==9) Temps[2]=receive1;//temperature 3
+    if(count3==13) Temps[3]=receive1;//temperature 4
+    if(count3==17) Temps[4]=receive1;//temperature 5
+    if(count3==21) Temps[5]=receive1;//temperature 6
+    if(count3==25) Temps[6]=receive1;//temperature 7
+    if(count3==29) Temps[7]=receive1;//temperature 8
+    }
+
+
+
   }
    DigIo::BatCS.Set();
 
@@ -249,7 +261,7 @@ Param::SetFloat((Param::PARAM_NUM)(Param::u12 + h), Voltage[1][h]);
 
 void BATMan::upDateTemps(void)
 {
-for (int g = 0; g < 2; g++)
+for (int g = 0; g < 8; g++)
 {
 tempval1=rev16(Temps[g]);//bytes swapped in the 16 bit words
          if (tempval1 >= (1131))

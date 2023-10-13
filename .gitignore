@@ -48,3 +48,5 @@ stm32_m3bms.bin
 
 # hex output - only keep for releases
 stm32_m3bms.hex
+*.o
+*.map
