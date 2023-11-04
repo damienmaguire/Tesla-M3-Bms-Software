@@ -38,8 +38,8 @@
  * IDs are 16 bit, so 65535 is the maximum
  */
 
- //Define a version string of your firmware here
-#define VER 0.01.A
+//Define a version string of your firmware here
+#define VER 0.01.E
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -65,122 +65,151 @@
     VALUE_ENTRY(deltaV,      "mV",   2005 ) \
     VALUE_ENTRY(udc,         "V",    2006 ) \
     VALUE_ENTRY(idc,         "A",    2007 ) \
-    VALUE_ENTRY(temp,        "°C",   2008 ) \
+    VALUE_ENTRY(TempMax,        "°C",   2008 ) \
+    VALUE_ENTRY(TempMin,        "°C",   2156 ) \
     VALUE_ENTRY(uavg,        "mV",   2009 ) \
     VALUE_ENTRY(umin,        "mV",   2010 ) \
+    VALUE_ENTRY(CellMin,       "",   2129 ) \
     VALUE_ENTRY(umax,        "mV",   2011 ) \
-    VALUE_ENTRY(u0,          "mV",   2012 ) \
-    VALUE_ENTRY(u1,          "mV",   2013 ) \
-    VALUE_ENTRY(u2,          "mV",   2014 ) \
-    VALUE_ENTRY(u3,          "mV",   2015 ) \
-    VALUE_ENTRY(u4,          "mV",   2016 ) \
-    VALUE_ENTRY(u5,          "mV",   2017 ) \
-    VALUE_ENTRY(u6,          "mV",   2018 ) \
-    VALUE_ENTRY(u7,          "mV",   2019 ) \
-    VALUE_ENTRY(u8,          "mV",   2020 ) \
-    VALUE_ENTRY(u9,          "mV",   2021 ) \
-    VALUE_ENTRY(u10,         "mV",   2022 ) \
-    VALUE_ENTRY(u11,         "mV",   2023 ) \
-    VALUE_ENTRY(u12,         "mV",   2024 ) \
-    VALUE_ENTRY(u13,         "mV",   2025 ) \
-    VALUE_ENTRY(u14,         "mV",   2026 ) \
-    VALUE_ENTRY(u15,         "mV",   2027 ) \
-    VALUE_ENTRY(u16,         "mV",   2028 ) \
-    VALUE_ENTRY(u17,         "mV",   2029 ) \
-    VALUE_ENTRY(u18,         "mV",   2030 ) \
-    VALUE_ENTRY(u19,         "mV",   2031 ) \
-    VALUE_ENTRY(u20,         "mV",   2032 ) \
-    VALUE_ENTRY(u21,         "mV",   2033 ) \
-    VALUE_ENTRY(u22,         "mV",   2035 ) \
-    VALUE_ENTRY(u23,         "mV",   2036 ) \
-    VALUE_ENTRY(u24,         "mV",   2037 ) \
-    VALUE_ENTRY(u25,         "mV",   2038 ) \
-    VALUE_ENTRY(u26,         "mV",   2039 ) \
-    VALUE_ENTRY(u27,         "mV",   2040 ) \
-    VALUE_ENTRY(u28,         "mV",   2041 ) \
-    VALUE_ENTRY(u29,         "mV",   2042 ) \
-    VALUE_ENTRY(u30,         "mV",   2043 ) \
-    VALUE_ENTRY(u31,         "mV",   2044 ) \
-    VALUE_ENTRY(u32,         "mV",   2045 ) \
-    VALUE_ENTRY(u33,         "mV",   2046 ) \
-    VALUE_ENTRY(u34,         "mV",   2047 ) \
-    VALUE_ENTRY(u35,         "mV",   2048 ) \
-    VALUE_ENTRY(u36,         "mV",   2049 ) \
-    VALUE_ENTRY(u37,         "mV",   2050 ) \
-    VALUE_ENTRY(u38,         "mV",   2051 ) \
-    VALUE_ENTRY(u39,         "mV",   2052 ) \
-    VALUE_ENTRY(u40,         "mV",   2053 ) \
-    VALUE_ENTRY(u41,         "mV",   2054 ) \
-    VALUE_ENTRY(u42,         "mV",   2055 ) \
-    VALUE_ENTRY(u43,         "mV",   2056 ) \
-    VALUE_ENTRY(u44,         "mV",   2057 ) \
-    VALUE_ENTRY(u45,         "mV",   2058 ) \
-    VALUE_ENTRY(u46,         "mV",   2059 ) \
-    VALUE_ENTRY(u47,         "mV",   2060 ) \
-    VALUE_ENTRY(u48,         "mV",   2061 ) \
-    VALUE_ENTRY(u49,         "mV",   2062 ) \
-    VALUE_ENTRY(u50,         "mV",   2063 ) \
-    VALUE_ENTRY(u51,         "mV",   2064 ) \
-    VALUE_ENTRY(u52,         "mV",   2065 ) \
-    VALUE_ENTRY(u53,         "mV",   2066 ) \
-    VALUE_ENTRY(u54,         "mV",   2067 ) \
-    VALUE_ENTRY(u55,         "mV",   2068 ) \
-    VALUE_ENTRY(u56,         "mV",   2069 ) \
-    VALUE_ENTRY(u57,         "mV",   2070 ) \
-    VALUE_ENTRY(u58,         "mV",   2071 ) \
-    VALUE_ENTRY(u59,         "mV",   2072 ) \
-    VALUE_ENTRY(u60,         "mV",   2073 ) \
-    VALUE_ENTRY(u61,         "mV",   2074 ) \
-    VALUE_ENTRY(u62,         "mV",   2075 ) \
-    VALUE_ENTRY(u63,         "mV",   2076 ) \
-    VALUE_ENTRY(u64,         "mV",   2077 ) \
-    VALUE_ENTRY(u65,         "mV",   2078 ) \
-    VALUE_ENTRY(u66,         "mV",   2079 ) \
-    VALUE_ENTRY(u67,         "mV",   2080 ) \
-    VALUE_ENTRY(u68,         "mV",   2081 ) \
-    VALUE_ENTRY(u69,         "mV",   2082 ) \
-    VALUE_ENTRY(u70,         "mV",   2083 ) \
-    VALUE_ENTRY(u71,         "mV",   2084 ) \
-    VALUE_ENTRY(u72,         "mV",   2085 ) \
-    VALUE_ENTRY(u73,         "mV",   2086 ) \
-    VALUE_ENTRY(u74,         "mV",   2087 ) \
-    VALUE_ENTRY(u75,         "mV",   2088 ) \
-    VALUE_ENTRY(u76,         "mV",   2089 ) \
-    VALUE_ENTRY(u77,         "mV",   2090 ) \
-    VALUE_ENTRY(u78,         "mV",   2091 ) \
-    VALUE_ENTRY(u79,         "mV",   2092 ) \
-    VALUE_ENTRY(u80,         "mV",   2093 ) \
-    VALUE_ENTRY(u81,         "mV",   2094 ) \
-    VALUE_ENTRY(u82,         "mV",   2095 ) \
-    VALUE_ENTRY(u83,         "mV",   2096 ) \
-    VALUE_ENTRY(u84,         "mV",   2097 ) \
-    VALUE_ENTRY(u85,         "mV",   2098 ) \
-    VALUE_ENTRY(u86,         "mV",   2099 ) \
-    VALUE_ENTRY(u87,         "mV",   2100 ) \
-    VALUE_ENTRY(u88,         "mV",   2101 ) \
-    VALUE_ENTRY(u89,         "mV",   2102 ) \
-    VALUE_ENTRY(u90,         "mV",   2103 ) \
-    VALUE_ENTRY(u91,         "mV",   2104 ) \
-    VALUE_ENTRY(u92,         "mV",   2105 ) \
-    VALUE_ENTRY(u93,         "mV",   2106 ) \
-    VALUE_ENTRY(u94,         "mV",   2107 ) \
-    VALUE_ENTRY(u95,         "mV",   2108 ) \
-    VALUE_ENTRY(u96,         "mV",   2109 ) \
-    VALUE_ENTRY(u97,         "mV",   2110 ) \
-    VALUE_ENTRY(u98,         "mV",   2111 ) \
-    VALUE_ENTRY(u99,         "mV",   2112 ) \
-    VALUE_ENTRY(u100,        "mV",   2113 ) \
-    VALUE_ENTRY(t0,          "°C",   2114 ) \
-    VALUE_ENTRY(t1,          "°C",   2115 ) \
-    VALUE_ENTRY(t2,          "°C",   2116 ) \
-    VALUE_ENTRY(t3,          "°C",   2117 ) \
-    VALUE_ENTRY(t4,          "°C",   2118 ) \
-    VALUE_ENTRY(t5,          "°C",   2119 ) \
-    VALUE_ENTRY(t6,          "°C",   2120 ) \
-    VALUE_ENTRY(t7,          "°C",   2121 ) \
-    VALUE_ENTRY(Reg5V,       "mV",   2123 ) \
-    VALUE_ENTRY(ChipV1,       "V",   2124 ) \
-    VALUE_ENTRY(ChipV2,       "V",   2125 ) \
+    VALUE_ENTRY(CellMax,       "",   2130 ) \
+    VALUE_ENTRY(u1,          "mV",   2012 ) \
+    VALUE_ENTRY(u2,          "mV",   2013 ) \
+    VALUE_ENTRY(u3,          "mV",   2014 ) \
+    VALUE_ENTRY(u4,          "mV",   2015 ) \
+    VALUE_ENTRY(u5,          "mV",   2016 ) \
+    VALUE_ENTRY(u6,          "mV",   2017 ) \
+    VALUE_ENTRY(u7,          "mV",   2018 ) \
+    VALUE_ENTRY(u8,          "mV",   2019 ) \
+    VALUE_ENTRY(u9,          "mV",   2020 ) \
+    VALUE_ENTRY(u10,          "mV",   2021 ) \
+    VALUE_ENTRY(u11,         "mV",   2022 ) \
+    VALUE_ENTRY(u12,         "mV",   2023 ) \
+    VALUE_ENTRY(u13,         "mV",   2024 ) \
+    VALUE_ENTRY(u14,         "mV",   2025 ) \
+    VALUE_ENTRY(u15,         "mV",   2026 ) \
+    VALUE_ENTRY(u16,         "mV",   2027 ) \
+    VALUE_ENTRY(u17,         "mV",   2028 ) \
+    VALUE_ENTRY(u18,         "mV",   2029 ) \
+    VALUE_ENTRY(u19,         "mV",   2030 ) \
+    VALUE_ENTRY(u20,         "mV",   2031 ) \
+    VALUE_ENTRY(u21,         "mV",   2032 ) \
+    VALUE_ENTRY(u22,         "mV",   2033 ) \
+    VALUE_ENTRY(u23,         "mV",   2035 ) \
+    VALUE_ENTRY(u24,         "mV",   2036 ) \
+    VALUE_ENTRY(u25,         "mV",   2037 ) \
+    VALUE_ENTRY(u26,         "mV",   2038 ) \
+    VALUE_ENTRY(u27,         "mV",   2039 ) \
+    VALUE_ENTRY(u28,         "mV",   2040 ) \
+    VALUE_ENTRY(u29,         "mV",   2041 ) \
+    VALUE_ENTRY(u30,         "mV",   2042 ) \
+    VALUE_ENTRY(u31,         "mV",   2043 ) \
+    VALUE_ENTRY(u32,         "mV",   2044 ) \
+    VALUE_ENTRY(u33,         "mV",   2045 ) \
+    VALUE_ENTRY(u34,         "mV",   2046 ) \
+    VALUE_ENTRY(u35,         "mV",   2047 ) \
+    VALUE_ENTRY(u36,         "mV",   2048 ) \
+    VALUE_ENTRY(u37,         "mV",   2049 ) \
+    VALUE_ENTRY(u38,         "mV",   2050 ) \
+    VALUE_ENTRY(u39,         "mV",   2051 ) \
+    VALUE_ENTRY(u40,         "mV",   2052 ) \
+    VALUE_ENTRY(u41,         "mV",   2053 ) \
+    VALUE_ENTRY(u42,         "mV",   2054 ) \
+    VALUE_ENTRY(u43,         "mV",   2055 ) \
+    VALUE_ENTRY(u44,         "mV",   2056 ) \
+    VALUE_ENTRY(u45,         "mV",   2057 ) \
+    VALUE_ENTRY(u46,         "mV",   2058 ) \
+    VALUE_ENTRY(u47,         "mV",   2059 ) \
+    VALUE_ENTRY(u48,         "mV",   2060 ) \
+    VALUE_ENTRY(u49,         "mV",   2061 ) \
+    VALUE_ENTRY(u50,         "mV",   2062 ) \
+    VALUE_ENTRY(u51,         "mV",   2063 ) \
+    VALUE_ENTRY(u52,         "mV",   2064 ) \
+    VALUE_ENTRY(u53,         "mV",   2065 ) \
+    VALUE_ENTRY(u54,         "mV",   2066 ) \
+    VALUE_ENTRY(u55,         "mV",   2067 ) \
+    VALUE_ENTRY(u56,         "mV",   2068 ) \
+    VALUE_ENTRY(u57,         "mV",   2069 ) \
+    VALUE_ENTRY(u58,         "mV",   2070 ) \
+    VALUE_ENTRY(u59,         "mV",   2071 ) \
+    VALUE_ENTRY(u60,         "mV",   2072 ) \
+    VALUE_ENTRY(u61,         "mV",   2073 ) \
+    VALUE_ENTRY(u62,         "mV",   2074 ) \
+    VALUE_ENTRY(u63,         "mV",   2075 ) \
+    VALUE_ENTRY(u64,         "mV",   2076 ) \
+    VALUE_ENTRY(u65,         "mV",   2077 ) \
+    VALUE_ENTRY(u66,         "mV",   2078 ) \
+    VALUE_ENTRY(u67,         "mV",   2079 ) \
+    VALUE_ENTRY(u68,         "mV",   2080 ) \
+    VALUE_ENTRY(u69,         "mV",   2081 ) \
+    VALUE_ENTRY(u70,         "mV",   2082 ) \
+    VALUE_ENTRY(u71,         "mV",   2083 ) \
+    VALUE_ENTRY(u72,         "mV",   2084 ) \
+    VALUE_ENTRY(u73,         "mV",   2085 ) \
+    VALUE_ENTRY(u74,         "mV",   2086 ) \
+    VALUE_ENTRY(u75,         "mV",   2087 ) \
+    VALUE_ENTRY(u76,         "mV",   2088 ) \
+    VALUE_ENTRY(u77,         "mV",   2089 ) \
+    VALUE_ENTRY(u78,         "mV",   2090 ) \
+    VALUE_ENTRY(u79,         "mV",   2091 ) \
+    VALUE_ENTRY(u80,         "mV",   2092 ) \
+    VALUE_ENTRY(u81,         "mV",   2093 ) \
+    VALUE_ENTRY(u82,         "mV",   2094 ) \
+    VALUE_ENTRY(u83,         "mV",   2095 ) \
+    VALUE_ENTRY(u84,         "mV",   2096 ) \
+    VALUE_ENTRY(u85,         "mV",   2097 ) \
+    VALUE_ENTRY(u86,         "mV",   2098 ) \
+    VALUE_ENTRY(u87,         "mV",   2099 ) \
+    VALUE_ENTRY(u88,         "mV",   2100 ) \
+    VALUE_ENTRY(u89,         "mV",   2101 ) \
+    VALUE_ENTRY(u90,         "mV",   2102 ) \
+    VALUE_ENTRY(u91,         "mV",   2103 ) \
+    VALUE_ENTRY(u92,         "mV",   2104 ) \
+    VALUE_ENTRY(u93,         "mV",   2105 ) \
+    VALUE_ENTRY(u94,         "mV",   2106 ) \
+    VALUE_ENTRY(u95,         "mV",   2107 ) \
+    VALUE_ENTRY(u96,         "mV",   2108 ) \
+    VALUE_ENTRY(u97,         "mV",   2109 ) \
+    VALUE_ENTRY(u98,         "mV",   2110 ) \
+    VALUE_ENTRY(u99,         "mV",   2111 ) \
+    VALUE_ENTRY(u100,         "mV",   2112 ) \
+    VALUE_ENTRY(u101,        "mV",   2113 ) \
+    VALUE_ENTRY(Cellt0_0,          "°C",   2140 ) \
+    VALUE_ENTRY(Cellt0_1,          "°C",   2141 ) \
+    VALUE_ENTRY(Cellt1_0,          "°C",   2142 ) \
+    VALUE_ENTRY(Cellt1_1,          "°C",   2143 ) \
+    VALUE_ENTRY(Cellt2_0,          "°C",   2144 ) \
+    VALUE_ENTRY(Cellt2_1,          "°C",   2145 ) \
+    VALUE_ENTRY(Cellt3_0,          "°C",   2146 ) \
+    VALUE_ENTRY(Cellt3_1,          "°C",   2147 ) \
+    VALUE_ENTRY(Cellt4_0,          "°C",   2148 ) \
+    VALUE_ENTRY(Cellt4_1,          "°C",   2149 ) \
+    VALUE_ENTRY(Cellt5_0,          "°C",   2150 ) \
+    VALUE_ENTRY(Cellt5_1,          "°C",   2151 ) \
+    VALUE_ENTRY(Cellt6_0,          "°C",   2152 ) \
+    VALUE_ENTRY(Cellt6_1,          "°C",   2153 ) \
+    VALUE_ENTRY(Cellt7_0,          "°C",   2154 ) \
+    VALUE_ENTRY(Cellt7_1,          "°C",   2155 ) \
+    VALUE_ENTRY(Chipt0,          "°C",   2114 ) \
+    VALUE_ENTRY(Chipt1,          "°C",   2115 ) \
+    VALUE_ENTRY(Chipt2,          "°C",   2116 ) \
+    VALUE_ENTRY(Chipt3,          "°C",   2117 ) \
+    VALUE_ENTRY(Chipt4,          "°C",   2118 ) \
+    VALUE_ENTRY(Chipt5,          "°C",   2119 ) \
+    VALUE_ENTRY(Chipt6,          "°C",   2120 ) \
+    VALUE_ENTRY(Chipt7,          "°C",   2121 ) \
+    VALUE_ENTRY(Chip1_5V,     "mV",   2123 ) \
+    VALUE_ENTRY(Chip2_5V,     "mV",   2124 ) \
+    VALUE_ENTRY(ChipV1,       "V",   2125 ) \
+    VALUE_ENTRY(ChipV2,       "V",   2126 ) \
+    VALUE_ENTRY(ChipV3,       "V",   2132 ) \
+    VALUE_ENTRY(ChipV4,       "V",   2133 ) \
+    VALUE_ENTRY(ChipV5,       "V",   2134 ) \
+    VALUE_ENTRY(ChipV6,       "V",   2135 ) \
+    VALUE_ENTRY(ChipV7,       "V",   2136 ) \
+    VALUE_ENTRY(ChipV8,       "V",   2137 ) \
+    VALUE_ENTRY(CellsPresent,       "",   2128 ) \
+    VALUE_ENTRY(LoopCnt,     "",    2127 ) \
+    VALUE_ENTRY(LoopState,     "",    2131 ) \
     VALUE_ENTRY(cpuload,     "%",    2122 )
 
 
@@ -200,15 +229,15 @@
 
 enum
 {
-   IDC_OFF, IDC_SINGLE, IDC_ISACAN
+    IDC_OFF, IDC_SINGLE, IDC_ISACAN
 };
 
 
 enum _modes
 {
-   MOD_OFF = 0,
-   MOD_RUN,
-   MOD_LAST
+    MOD_OFF = 0,
+    MOD_RUN,
+    MOD_LAST
 };
 
 //Generated enum-string for possible errors

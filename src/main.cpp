@@ -55,8 +55,8 @@ static void Ms100Task(void)
    float cpuLoad = scheduler->GetCpuLoad();
    Param::SetFloat(Param::cpuload, cpuLoad / 10);
 
+BATMan::loop();
 
-   BATMan::loop();
 }
 
 //sample 10 ms task
@@ -113,6 +113,8 @@ extern "C" int main(void)
 
    Terminal t(USART3, termCmds);
    TerminalCommands::SetCanMap(canMap);
+
+   BATMan::BatStart();
 
    s.AddTask(Ms10Task, 10);
    s.AddTask(Ms100Task, 100);
