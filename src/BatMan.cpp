@@ -113,6 +113,13 @@ float TempMin = 1000;
 uint16_t SendDelay = 1000;
 uint32_t lasttime = 0;
 
+
+void BATMan::HandleBatCan(uint32_t data[2])
+{
+    uint8_t* bytes = (uint8_t*)data;
+
+}
+
 void BATMan::BatStart()
 {
     ChipNum = Param::GetInt(Param::numbmbs)*2;

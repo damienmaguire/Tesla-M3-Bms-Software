@@ -24,6 +24,8 @@
 #include <libopencm3/stm32/iwdg.h>
 #include "stm32_can.h"
 #include "canmap.h"
+#include "cansdo.h"
+#include "canobd2.h"
 #include "terminal.h"
 #include "params.h"
 #include "hwdefs.h"
@@ -56,7 +58,21 @@ static void Ms100Task(void)
    Param::SetFloat(Param::cpuload, cpuLoad / 10);
 
 BATMan::loop();
-
+///////////////////////////Basic can send routine/////////////////////////////////
+   static uint8_t demoCtr;
+   // Declare data frame array.
+   uint8_t bytes[8];
+   bytes[0]=0x05;
+   bytes[1]=0x00;
+   bytes[2]=0x01;
+   bytes[3]=0x10;
+   bytes[4]=0x00;
+   bytes[5]=0x00;
+   bytes[6]=0x00;
+   bytes[7]=demoCtr;
+   can->Send(0x580, bytes,8);//ID and DLC can be set here.
+   demoCtr++;
+//////////////////////////////////////////////////////////////////////////////////
 }
 
 //sample 10 ms task
@@ -79,6 +95,29 @@ void Param::Change(Param::PARAM_NUM paramNum)
    }
 }
 
+static void HandleClear()//Must add the ids to be received here as this set the filters.
+{
+   can->RegisterUserMessage(0x100);
+
+}
+
+static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc)//Here we decide what to to with the received ids. e.g. call a function in another class etc.
+{
+
+   switch (id)
+   {
+   case 0x100:
+    BATMan::HandleBatCan(data);//can also pass the id and dlc if required to do further work downstream.
+      break;
+   default:
+
+      break;
+   }
+   return false;
+
+}
+
+
 //Whichever timer(s) you use for the scheduler, you have to
 //implement their ISRs here and call into the respective scheduler
 extern "C" void tim2_isr(void)
@@ -94,6 +133,7 @@ extern "C" int main(void)
    rtc_setup();
    ANA_IN_CONFIGURE(ANA_IN_LIST);
    DIG_IO_CONFIGURE(DIG_IO_LIST);
+   gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON, AFIO_MAPR_CAN1_REMAP_PORTB);//Remap CAN pins to Portb alt funcs.
    AnaIn::Start(); //Starts background ADC conversion via DMA
    write_bootloader_pininit(); //Instructs boot loader to initialize certain pins
 
@@ -105,10 +145,18 @@ extern "C" int main(void)
    Stm32Scheduler s(TIM2); //We never exit main so it's ok to put it on stack
    scheduler = &s;
    //Initialize CAN1, including interrupts. Clock must be enabled in clock_setup()
-   Stm32Can c(CAN1, CanHardware::Baud500);
-   CanMap cm(&c);
+   Stm32Can c(CAN1, CanHardware::Baud500,true);
+   FunctionPointerCallback cb(CanCallback, HandleClear);
    //store a pointer for easier access
    can = &c;
+   //c.SetNodeId(2);
+   c.AddCallback(&cb);
+   CanMap cm(&c);
+   CanSdo sdo(&c, &cm);
+   TerminalCommands::SetCanMap(&cm);
+   HandleClear();
+   sdo.SetNodeId(2);
+
    canMap = &cm;
 
    Terminal t(USART3, termCmds);
@@ -124,13 +172,12 @@ extern "C" int main(void)
 
    while(1)
    {
-   //   char c = 0;
+      char c = 0;
       t.Run();
-   //   if (canMap->GetPrintRequest() == PRINT_JSON)
-   //   {
-   //      TerminalCommands::PrintParamsJson(canMap, &c);
-   //      canMap->SignalPrintComplete();
-   //   }
+      if (sdo.GetPrintRequest() == PRINT_JSON)
+      {
+         TerminalCommands::PrintParamsJson(&sdo, &c);
+      }
    }
 
 

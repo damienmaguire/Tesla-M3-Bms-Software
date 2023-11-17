@@ -19,6 +19,7 @@ class BATMan
 public:
     static      void BatStart();
     static		void loop();
+    static      void HandleBatCan(uint32_t data[2]);
 
 
 
