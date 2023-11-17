@@ -54,19 +54,23 @@
     PARAM_ENTRY(CAT_BMS,     numbmbs,     "",        1,      4,      1,      2   ) \
     PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      3   ) \
     PARAM_ENTRY(CAT_BMS,     nomcap,      "Ah",      0,      1000,   100,    4   ) \
-    PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",   -1000,  1000,   10,     5   ) \
-    PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      6   ) \
-    PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      7   ) \
+    PARAM_ENTRY(CAT_BMS,    CellVmax,     "mV",      3000, 4200,   4150,      5   ) \
+    PARAM_ENTRY(CAT_BMS,    CellVmin,     "mV",      2800, 3500,   3200,      6   ) \
+    PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",   -1000,  1000,   10,     7  ) \
+    PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      8   ) \
+    PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      9  ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
     VALUE_ENTRY(soc,         "As",   2002 ) \
     VALUE_ENTRY(chargelim,   "A",    2003 ) \
     VALUE_ENTRY(dischargelim,"A",    2004 ) \
+    VALUE_ENTRY(chargeVlim,  "V",    2157 ) \
+    VALUE_ENTRY(dischargeVlim,"V",   2158 ) \
     VALUE_ENTRY(deltaV,      "mV",   2005 ) \
     VALUE_ENTRY(udc,         "V",    2006 ) \
     VALUE_ENTRY(idc,         "A",    2007 ) \
-    VALUE_ENTRY(TempMax,        "°C",   2008 ) \
-    VALUE_ENTRY(TempMin,        "°C",   2156 ) \
+    VALUE_ENTRY(TempMax,     "°C",   2008 ) \
+    VALUE_ENTRY(TempMin,     "°C",   2156 ) \
     VALUE_ENTRY(uavg,        "mV",   2009 ) \
     VALUE_ENTRY(umin,        "mV",   2010 ) \
     VALUE_ENTRY(CellMin,       "",   2129 ) \
@@ -81,7 +85,7 @@
     VALUE_ENTRY(u7,          "mV",   2018 ) \
     VALUE_ENTRY(u8,          "mV",   2019 ) \
     VALUE_ENTRY(u9,          "mV",   2020 ) \
-    VALUE_ENTRY(u10,          "mV",   2021 ) \
+    VALUE_ENTRY(u10,         "mV",   2021 ) \
     VALUE_ENTRY(u11,         "mV",   2022 ) \
     VALUE_ENTRY(u12,         "mV",   2023 ) \
     VALUE_ENTRY(u13,         "mV",   2024 ) \
@@ -171,34 +175,34 @@
     VALUE_ENTRY(u97,         "mV",   2109 ) \
     VALUE_ENTRY(u98,         "mV",   2110 ) \
     VALUE_ENTRY(u99,         "mV",   2111 ) \
-    VALUE_ENTRY(u100,         "mV",   2112 ) \
+    VALUE_ENTRY(u100,        "mV",   2112 ) \
     VALUE_ENTRY(u101,        "mV",   2113 ) \
-    VALUE_ENTRY(Cellt0_0,          "°C",   2140 ) \
-    VALUE_ENTRY(Cellt0_1,          "°C",   2141 ) \
-    VALUE_ENTRY(Cellt1_0,          "°C",   2142 ) \
-    VALUE_ENTRY(Cellt1_1,          "°C",   2143 ) \
-    VALUE_ENTRY(Cellt2_0,          "°C",   2144 ) \
-    VALUE_ENTRY(Cellt2_1,          "°C",   2145 ) \
-    VALUE_ENTRY(Cellt3_0,          "°C",   2146 ) \
-    VALUE_ENTRY(Cellt3_1,          "°C",   2147 ) \
-    VALUE_ENTRY(Cellt4_0,          "°C",   2148 ) \
-    VALUE_ENTRY(Cellt4_1,          "°C",   2149 ) \
-    VALUE_ENTRY(Cellt5_0,          "°C",   2150 ) \
-    VALUE_ENTRY(Cellt5_1,          "°C",   2151 ) \
-    VALUE_ENTRY(Cellt6_0,          "°C",   2152 ) \
-    VALUE_ENTRY(Cellt6_1,          "°C",   2153 ) \
-    VALUE_ENTRY(Cellt7_0,          "°C",   2154 ) \
-    VALUE_ENTRY(Cellt7_1,          "°C",   2155 ) \
-    VALUE_ENTRY(Chipt0,          "°C",   2114 ) \
-    VALUE_ENTRY(Chipt1,          "°C",   2115 ) \
-    VALUE_ENTRY(Chipt2,          "°C",   2116 ) \
-    VALUE_ENTRY(Chipt3,          "°C",   2117 ) \
-    VALUE_ENTRY(Chipt4,          "°C",   2118 ) \
-    VALUE_ENTRY(Chipt5,          "°C",   2119 ) \
-    VALUE_ENTRY(Chipt6,          "°C",   2120 ) \
-    VALUE_ENTRY(Chipt7,          "°C",   2121 ) \
-    VALUE_ENTRY(Chip1_5V,     "mV",   2123 ) \
-    VALUE_ENTRY(Chip2_5V,     "mV",   2124 ) \
+    VALUE_ENTRY(Cellt0_0,    "°C",   2140 ) \
+    VALUE_ENTRY(Cellt0_1,    "°C",   2141 ) \
+    VALUE_ENTRY(Cellt1_0,    "°C",   2142 ) \
+    VALUE_ENTRY(Cellt1_1,    "°C",   2143 ) \
+    VALUE_ENTRY(Cellt2_0,    "°C",   2144 ) \
+    VALUE_ENTRY(Cellt2_1,    "°C",   2145 ) \
+    VALUE_ENTRY(Cellt3_0,    "°C",   2146 ) \
+    VALUE_ENTRY(Cellt3_1,    "°C",   2147 ) \
+    VALUE_ENTRY(Cellt4_0,    "°C",   2148 ) \
+    VALUE_ENTRY(Cellt4_1,    "°C",   2149 ) \
+    VALUE_ENTRY(Cellt5_0,    "°C",   2150 ) \
+    VALUE_ENTRY(Cellt5_1,    "°C",   2151 ) \
+    VALUE_ENTRY(Cellt6_0,    "°C",   2152 ) \
+    VALUE_ENTRY(Cellt6_1,    "°C",   2153 ) \
+    VALUE_ENTRY(Cellt7_0,    "°C",   2154 ) \
+    VALUE_ENTRY(Cellt7_1,    "°C",   2155 ) \
+    VALUE_ENTRY(Chipt0,      "°C",   2114 ) \
+    VALUE_ENTRY(Chipt1,      "°C",   2115 ) \
+    VALUE_ENTRY(Chipt2,      "°C",   2116 ) \
+    VALUE_ENTRY(Chipt3,      "°C",   2117 ) \
+    VALUE_ENTRY(Chipt4,      "°C",   2118 ) \
+    VALUE_ENTRY(Chipt5,      "°C",   2119 ) \
+    VALUE_ENTRY(Chipt6,      "°C",   2120 ) \
+    VALUE_ENTRY(Chipt7,      "°C",   2121 ) \
+    VALUE_ENTRY(Chip1_5V,    "mV",   2123 ) \
+    VALUE_ENTRY(Chip2_5V,    "mV",   2124 ) \
     VALUE_ENTRY(ChipV1,       "V",   2125 ) \
     VALUE_ENTRY(ChipV2,       "V",   2126 ) \
     VALUE_ENTRY(ChipV3,       "V",   2132 ) \
@@ -207,9 +211,9 @@
     VALUE_ENTRY(ChipV6,       "V",   2135 ) \
     VALUE_ENTRY(ChipV7,       "V",   2136 ) \
     VALUE_ENTRY(ChipV8,       "V",   2137 ) \
-    VALUE_ENTRY(CellsPresent,       "",   2128 ) \
-    VALUE_ENTRY(LoopCnt,     "",    2127 ) \
-    VALUE_ENTRY(LoopState,     "",    2131 ) \
+    VALUE_ENTRY(CellsPresent,  "",   2128 ) \
+    VALUE_ENTRY(LoopCnt,      "",    2127 ) \
+    VALUE_ENTRY(LoopState,    "",    2131 ) \
     VALUE_ENTRY(cpuload,     "%",    2122 )
 
 

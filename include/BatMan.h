@@ -19,7 +19,6 @@ class BATMan
 public:
     static      void BatStart();
     static		void loop();
-    static      void HandleBatCan(uint32_t data[2]);
 
 
 
@@ -27,7 +26,7 @@ private:
     static      void StateMachine();
     static      void IdleWake();
     static		void GetData(uint8_t ReqID);
-    static		bool WakeUP();
+    static		void WakeUP();
     static		void Generic_Send_Once(uint16_t Command[], uint8_t len);
     static      void delay(int16_t FLASH_DELAY)
     {
@@ -39,6 +38,7 @@ private:
     static       void upDateCellVolts(void);
     static       void upDateAuxVolts(void);
     static       void upDateTemps(void);
+    static       void WriteCfg();
     static       uint16_t rev16(uint16_t x)
     {
         return (x << 8) | (x >>8);

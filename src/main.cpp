@@ -25,7 +25,7 @@
 #include "stm32_can.h"
 #include "canmap.h"
 #include "cansdo.h"
-#include "canobd2.h"
+//#include "canobd2.h"
 #include "terminal.h"
 #include "params.h"
 #include "hwdefs.h"
@@ -40,10 +40,14 @@
 #include "terminalcommands.h"
 #include "BatMan.h"
 #include "ModelS.h"
+#include "CAN_Common.h"
 
 #define PRINT_JSON 0
 
-extern "C" void __cxa_pure_virtual() { while (1); }
+extern "C" void __cxa_pure_virtual()
+{
+    while (1);
+}
 
 static Stm32Scheduler* scheduler;
 static CanHardware* can;
@@ -52,34 +56,21 @@ static CanMap* canMap;
 //sample 100ms task
 static void Ms100Task(void)
 {
-   DigIo::led_out.Toggle();
-   iwdg_reset();
-   float cpuLoad = scheduler->GetCpuLoad();
-   Param::SetFloat(Param::cpuload, cpuLoad / 10);
+    DigIo::led_out.Toggle();
+    iwdg_reset();
+    float cpuLoad = scheduler->GetCpuLoad();
+    Param::SetFloat(Param::cpuload, cpuLoad / 10);
 
-BATMan::loop();
-///////////////////////////Basic can send routine/////////////////////////////////
-   static uint8_t demoCtr;
-   // Declare data frame array.
-   uint8_t bytes[8];
-   bytes[0]=0x05;
-   bytes[1]=0x00;
-   bytes[2]=0x01;
-   bytes[3]=0x10;
-   bytes[4]=0x00;
-   bytes[5]=0x00;
-   bytes[6]=0x00;
-   bytes[7]=demoCtr;
-   can->Send(0x580, bytes,8);//ID and DLC can be set here.
-   demoCtr++;
-//////////////////////////////////////////////////////////////////////////////////
+    BATMan::loop();
+
+    CAN_Common::Task100Ms();
 }
 
 //sample 10 ms task
 static void Ms10Task(void)
 {
-   //Set timestamp of error message
-   ErrorMessage::SetTime(rtc_get_counter_val());
+    //Set timestamp of error message
+    ErrorMessage::SetTime(rtc_get_counter_val());
 
 
 }
@@ -87,100 +78,102 @@ static void Ms10Task(void)
 /** This function is called when the user changes a parameter */
 void Param::Change(Param::PARAM_NUM paramNum)
 {
-   switch (paramNum)
-   {
-   default:
-      //Handle general parameter changes here. Add paramNum labels for handling specific parameters
-      break;
-   }
+    switch (paramNum)
+    {
+    default:
+        //Handle general parameter changes here. Add paramNum labels for handling specific parameters
+        break;
+    }
 }
 
 static void HandleClear()//Must add the ids to be received here as this set the filters.
 {
-   can->RegisterUserMessage(0x100);
+    can->RegisterUserMessage(0x100);
 
 }
 
-static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc)//Here we decide what to to with the received ids. e.g. call a function in another class etc.
+static bool CanCallback(uint32_t id, uint32_t data[2])//, uint8_t dlc)//Here we decide what to to with the received ids. e.g. call a function in another class etc.
 {
 
-   switch (id)
-   {
-   case 0x100:
-    BATMan::HandleBatCan(data);//can also pass the id and dlc if required to do further work downstream.
-      break;
-   default:
+    switch (id)
+    {
+    case 0x100:
+        CAN_Common::HandleCan(data);//can also pass the id and dlc if required to do further work downstream.
+        break;
+    default:
 
-      break;
-   }
-   return false;
+        break;
+    }
+    return false;
 
 }
-
 
 //Whichever timer(s) you use for the scheduler, you have to
 //implement their ISRs here and call into the respective scheduler
 extern "C" void tim2_isr(void)
 {
-   scheduler->Run();
+    scheduler->Run();
 }
 
 extern "C" int main(void)
 {
-   extern const TERM_CMD termCmds[];
+    extern const TERM_CMD termCmds[];
 
-   clock_setup(); //Must always come first
-   rtc_setup();
-   ANA_IN_CONFIGURE(ANA_IN_LIST);
-   DIG_IO_CONFIGURE(DIG_IO_LIST);
-   gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON, AFIO_MAPR_CAN1_REMAP_PORTB);//Remap CAN pins to Portb alt funcs.
-   AnaIn::Start(); //Starts background ADC conversion via DMA
-   write_bootloader_pininit(); //Instructs boot loader to initialize certain pins
+    clock_setup(); //Must always come first
+    rtc_setup();
+    ANA_IN_CONFIGURE(ANA_IN_LIST);
+    DIG_IO_CONFIGURE(DIG_IO_LIST);
+    gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON, AFIO_MAPR_CAN1_REMAP_PORTB);//Remap CAN pins to Portb alt funcs.
+    AnaIn::Start(); //Starts background ADC conversion via DMA
+    write_bootloader_pininit(); //Instructs boot loader to initialize certain pins
 
-   nvic_setup(); //Set up some interrupts
-   parm_load(); //Load stored parameters
-   spi1_setup();// SPI1 for Model 3 BMB modules
-   usart1_setup();//Usart 1 for Model S / X slaves
+    nvic_setup(); //Set up some interrupts
+    parm_load(); //Load stored parameters
+    spi1_setup();// SPI1 for Model 3 BMB modules
+    usart1_setup();//Usart 1 for Model S / X slaves
 
-   Stm32Scheduler s(TIM2); //We never exit main so it's ok to put it on stack
-   scheduler = &s;
-   //Initialize CAN1, including interrupts. Clock must be enabled in clock_setup()
-   Stm32Can c(CAN1, CanHardware::Baud500,true);
-   FunctionPointerCallback cb(CanCallback, HandleClear);
-   //store a pointer for easier access
-   can = &c;
-   //c.SetNodeId(2);
-   c.AddCallback(&cb);
-   CanMap cm(&c);
-   CanSdo sdo(&c, &cm);
-   TerminalCommands::SetCanMap(&cm);
-   HandleClear();
-   sdo.SetNodeId(2);
+    Stm32Scheduler s(TIM2); //We never exit main so it's ok to put it on stack
+    scheduler = &s;
 
-   canMap = &cm;
+    //Initialize CAN1, including interrupts. Clock must be enabled in clock_setup()
+    Stm32Can c(CAN1, CanHardware::Baud500,true);
+    FunctionPointerCallback cb(CanCallback, HandleClear);
 
-   Terminal t(USART3, termCmds);
-   TerminalCommands::SetCanMap(canMap);
+//store a pointer for easier access
+    can = &c;
+    //c.SetNodeId(2);
+    c.AddCallback(&cb);
+    CanMap cm(&c);
+    CanSdo sdo(&c, &cm);
+    TerminalCommands::SetCanMap(&cm);
+    HandleClear();
+    sdo.SetNodeId(2);
 
-   BATMan::BatStart();
+    canMap = &cm;
 
-   s.AddTask(Ms10Task, 10);
-   s.AddTask(Ms100Task, 100);
+    CAN_Common::SetCan(&c);
 
-   Param::SetInt(Param::version, 4);
-   Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation
+    Terminal t(USART3, termCmds);
+    TerminalCommands::SetCanMap(canMap);
 
-   while(1)
-   {
-      char c = 0;
-      t.Run();
-      if (sdo.GetPrintRequest() == PRINT_JSON)
-      {
-         TerminalCommands::PrintParamsJson(&sdo, &c);
-      }
-   }
+    BATMan::BatStart();
 
+    s.AddTask(Ms10Task, 10);
+    s.AddTask(Ms100Task, 100);
 
-   return 0;
+    Param::SetInt(Param::version, 4);
+    Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation
+
+    while(1)
+    {
+        char c = 0;
+        t.Run();
+        if (sdo.GetPrintRequest() == PRINT_JSON)
+        {
+            TerminalCommands::PrintParamsJson(&sdo, &c);
+        }
+    }
+
+    return 0;
 }
 

@@ -22,6 +22,8 @@ Read Aux B No Tag = 0x0E00
 Read Status Reg = 0x4F00
 Read Config = 0x5000
 
+Write Config = 0x11
+
 Major Code Contributors:
 Tom de Bree - Volt Influx
 Damien Mcguire - EV Bmw
@@ -75,9 +77,33 @@ uint16_t Temp1   [8] = {0};
 uint16_t Temp2   [8] = {0};
 uint16_t Volts5v [8] = {0};
 uint16_t ChipV   [8] = {0};
-uint16_t Cfg [8] = {0};
+uint16_t Cfg [8][2] =
+{
+    {0,0},
+    {0,0},
+    {0,0},
+    {0,0},
+    {0,0},
+    {0,0},
+    {0,0},
+    {0,0}
+};
 
-uint16_t crcTable2f[256] = {
+/*
+UVAR16 TSOLO   : 4;
+UVAR16 RAND    : 1;
+UVAR16 FILT    : 3;  // LTC831_FILT_E
+UVAR16 DCT0    : 4;  // 0 = off, 0.5,1
+UVAR16 TEMP_OW : 1;
+UVAR16 SPARE   : 1;
+UVAR16 TRY     : 1;
+UVAR16 MOD_DIS : 1;
+UVAR8  DCC8_1;
+UVAR8  DCC16_9;
+*/
+
+uint16_t crcTable2f[256] =
+{
     0x00, 0x2F, 0x5E, 0x71, 0xBC, 0x93, 0xE2, 0xCD, 0x57, 0x78, 0x09, 0x26, 0xEB, 0xC4, 0xB5, 0x9A,
     0xAE, 0x81, 0xF0, 0xDF, 0x12, 0x3D, 0x4C, 0x63, 0xF9, 0xD6, 0xA7, 0x88, 0x45, 0x6A, 0x1B, 0x34,
     0x73, 0x5C, 0x2D, 0x02, 0xCF, 0xE0, 0x91, 0xBE, 0x24, 0x0B, 0x7A, 0x55, 0x98, 0xB7, 0xC6, 0xE9,
@@ -113,13 +139,6 @@ float TempMin = 1000;
 uint16_t SendDelay = 1000;
 uint32_t lasttime = 0;
 
-
-void BATMan::HandleBatCan(uint32_t data[2])
-{
-    uint8_t* bytes = (uint8_t*)data;
-
-}
-
 void BATMan::BatStart()
 {
     ChipNum = Param::GetInt(Param::numbmbs)*2;
@@ -138,10 +157,8 @@ void BATMan::StateMachine()
     {
         if(BmbTimeout == true)
         {
-            if(WakeUP())//send wake up 4 times for 4 bmb boards
-            {
-                LoopState++;
-            }
+            WakeUP();//send wake up 4 times for 4 bmb boards
+            LoopState++;
         }
         else
         {
@@ -213,11 +230,26 @@ void BATMan::StateMachine()
         delay(SendDelay);
         GetTempData();//Request temps
 
+        //WriteCfg();
+
         LoopState++;
         break;
     }
 
-    case 6:
+    case 6: //first state check if there is time out of commms requiring full wake
+    {
+        WakeUP();//send wake up 4 times for 4 bmb boards
+        WriteCfg();
+        delay(SendDelay);
+        WakeUP();//send wake up 4 times for 4 bmb boards
+        WriteCfg();
+        delay(SendDelay);
+        WakeUP();//send wake up 4 times for 4 bmb boards
+        LoopState++;
+        break;
+    }
+
+    case 7:
     {
 
         upDateTemps();
@@ -228,7 +260,7 @@ void BATMan::StateMachine()
         break;
     }
 
-    case 7: //Waiting State
+    case 8: //Waiting State
     {
         if(IdleCnt < 20)
         {
@@ -269,8 +301,8 @@ void BATMan::IdleWake()
 
 void BATMan::GetData(uint8_t ReqID)
 {
-    uint8_t tempData[2] ={0};
-    uint16_t ReqData[2] ={0};
+    uint8_t tempData[2] = {0};
+    uint16_t ReqData[2] = {0};
 
     tempData[0] = ReqID;
 
@@ -285,7 +317,7 @@ void BATMan::GetData(uint8_t ReqID)
     receive2 = spi_xfer(SPI1, ReqData[1]);  // do a transfer
 
     //receive1 = spi_xfer(SPI1, Request[0]);  // do a transfer
-   // receive2 = spi_xfer(SPI1, Request[1]);  // do a transfer
+    // receive2 = spi_xfer(SPI1, Request[1]);  // do a transfer
 
     for (count2 = 0; count2 <= 72; count2 = count2 + 2)
     {
@@ -413,12 +445,70 @@ void BATMan::GetData(uint8_t ReqID)
         }
         break;
 
+    case 0x50:
+        for (int h = 0; h < 8; h++)
+        {
+            tempvol = Fluffer[0 + (h * 7)] * 256 + Fluffer [1 + (h * 7)];
+            if (tempvol != 0xffff)
+            {
+                Cfg[h][0] = tempvol;
+            }
+
+
+            tempvol = Fluffer[2 + (h * 7)] * 256 + Fluffer [3 + (h * 7)];
+            if (tempvol != 0xffff)
+            {
+                Cfg[h][1] =  tempvol;
+            }
+        }
+        break;
+
+
     default:
         // statements
         break;
     }
 
 }
+
+
+void BATMan::WriteCfg()
+{
+    // CMD(one byte) PEC(one byte)
+    uint8_t tempData[6] = {0};
+
+    //uint8_t DCC16_9 = 0;
+    //uint8_t DCC8_1 = 0;
+    uint16_t cfgwrt [24] = {0};
+
+    cfgwrt[0]= 0x112F;        //CMD
+
+    tempData[0]=0xF3;
+    tempData[1]=0x00;
+    tempData[2]=0x00;
+    tempData[3]=0x00;
+    tempData[4]=0x38;
+    tempData[5] = (calcCRC(tempData, 5));
+
+    Param::SetFloat(Param::idc,tempData[5]);
+
+    for (int h = 0; h < 7; h++)//write the 8 BMB registers
+    {
+        cfgwrt[1+h*3] = 0xF300;
+        cfgwrt[2+h*3] = 0x0000;
+        cfgwrt[3+h*3] = 0x38DC;//Contains the PEC and other shit
+    }
+
+
+    DigIo::BatCS.Clear();
+
+    for (int cnt = 0; cnt < 24; cnt++)
+    {
+        receive1 = spi_xfer(SPI1, cfgwrt[cnt]);  // do a transfer
+    }
+    DigIo::BatCS.Set();
+}
+
 
 void BATMan::GetTempData ()  //request
 {
@@ -447,27 +537,13 @@ void BATMan::GetTempData ()  //request
     //delay(200);
 }
 
-bool BATMan::WakeUP()
+void BATMan::WakeUP()
 {
-    if(WakeCnt == 0)
+    for (count1 = 0; count1 <= 4; count1++)
     {
-        for (count1 = 0; count1 <= 4; count1++)
-        {
-            DigIo::BatCS.Clear();
-            receive1 = spi_xfer(SPI1, WakeUp[0]);  // do a transfer
-            DigIo::BatCS.Set();
-        }
-    }
-
-    WakeCnt++;
-    if(WakeCnt == 2)
-    {
-        WaitCnt =0;
-        return (true);
-    }
-    else
-    {
-        return (false);
+        DigIo::BatCS.Clear();
+        receive1 = spi_xfer(SPI1, WakeUp[0]);  // do a transfer
+        DigIo::BatCS.Set();
     }
 }
 
@@ -556,6 +632,10 @@ void BATMan::upDateAuxVolts(void)
     }
 
     Param::SetInt(Param::uavg,(Param::GetFloat(Param::udc)/Param::GetInt(Param::CellsPresent)*1000));
+
+    //Set Charge and discharge voltage limits !!! Update with configrable
+    Param::SetFloat(Param::chargeVlim,(Param::GetInt(Param::CellVmax)*0.001*Param::GetInt(Param::CellsPresent)));
+    Param::SetFloat(Param::dischargeVlim,(Param::GetInt(Param::CellVmin)*0.001*Param::GetInt(Param::CellsPresent)));
 }
 
 void BATMan::upDateTemps(void)
@@ -611,6 +691,9 @@ void BATMan::upDateTemps(void)
     }
     Param::SetFloat(Param::TempMax,TempMax);
     Param::SetFloat(Param::TempMin,TempMin);
+
+    Param::SetFloat(Param::chargelim,Cfg[0][0]);
+    Param::SetFloat(Param::dischargelim,Cfg[0][1]);
 
 }
 
