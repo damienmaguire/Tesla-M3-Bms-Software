@@ -92,7 +92,7 @@ static void HandleClear()//Must add the ids to be received here as this set the 
 
 }
 
-static bool CanCallback(uint32_t id, uint32_t data[2])//, uint8_t dlc)//Here we decide what to to with the received ids. e.g. call a function in another class etc.
+static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc)//Here we decide what to to with the received ids. e.g. call a function in another class etc.
 {
 
     switch (id)
