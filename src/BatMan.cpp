@@ -29,6 +29,9 @@ Tom de Bree - Volt Influx
 Damien Mcguire - EV Bmw
 */
 
+#define cycletime 20
+float BalHys = 20; //mV balance limit
+
 uint16_t WakeUp[2] = {0x2ad4, 0x0000};
 uint16_t Mute[2] = {0x20dd, 0x0000};
 uint16_t Unmute[2] = {0x21f2, 0x0000};
@@ -71,6 +74,7 @@ uint16_t Voltage[8][15] =
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
+uint16_t CellBalCmd[8]= {0, 0, 0, 0, 0, 0, 0, 0};
 
 uint16_t Temps   [8] = {0};
 uint16_t Temp1   [8] = {0};
@@ -122,15 +126,56 @@ uint16_t crcTable2f[256] =
     0xD8, 0xF7, 0x86, 0xA9, 0x64, 0x4B, 0x3A, 0x15, 0x8F, 0xA0, 0xD1, 0xFE, 0x33, 0x1C, 0x6D, 0x42
 };
 
+// CRC table for Batman data
+#define crcPolyBmData 0x025b
+
+static const uint16_t crc14table[256] =
+{
+    0x0000, 0x025b, 0x04b6, 0x06ed, 0x096c, 0x0b37, 0x0dda, 0x0f81,
+    0x12d8, 0x1083, 0x166e, 0x1435, 0x1bb4, 0x19ef, 0x1f02, 0x1d59,
+    0x25b0, 0x27eb, 0x2106, 0x235d, 0x2cdc, 0x2e87, 0x286a, 0x2a31,
+    0x3768, 0x3533, 0x33de, 0x3185, 0x3e04, 0x3c5f, 0x3ab2, 0x38e9,
+    0x093b, 0x0b60, 0x0d8d, 0x0fd6, 0x0057, 0x020c, 0x04e1, 0x06ba,
+    0x1be3, 0x19b8, 0x1f55, 0x1d0e, 0x128f, 0x10d4, 0x1639, 0x1462,
+    0x2c8b, 0x2ed0, 0x283d, 0x2a66, 0x25e7, 0x27bc, 0x2151, 0x230a,
+    0x3e53, 0x3c08, 0x3ae5, 0x38be, 0x373f, 0x3564, 0x3389, 0x31d2,
+    0x1276, 0x102d, 0x16c0, 0x149b, 0x1b1a, 0x1941, 0x1fac, 0x1df7,
+    0x00ae, 0x02f5, 0x0418, 0x0643, 0x09c2, 0x0b99, 0x0d74, 0x0f2f,
+    0x37c6, 0x359d, 0x3370, 0x312b, 0x3eaa, 0x3cf1, 0x3a1c, 0x3847,
+    0x251e, 0x2745, 0x21a8, 0x23f3, 0x2c72, 0x2e29, 0x28c4, 0x2a9f,
+    0x1b4d, 0x1916, 0x1ffb, 0x1da0, 0x1221, 0x107a, 0x1697, 0x14cc,
+    0x0995, 0x0bce, 0x0d23, 0x0f78, 0x00f9, 0x02a2, 0x044f, 0x0614,
+    0x3efd, 0x3ca6, 0x3a4b, 0x3810, 0x3791, 0x35ca, 0x3327, 0x317c,
+    0x2c25, 0x2e7e, 0x2893, 0x2ac8, 0x2549, 0x2712, 0x21ff, 0x23a4,
+    0x24ec, 0x26b7, 0x205a, 0x2201, 0x2d80, 0x2fdb, 0x2936, 0x2b6d,
+    0x3634, 0x346f, 0x3282, 0x30d9, 0x3f58, 0x3d03, 0x3bee, 0x39b5,
+    0x015c, 0x0307, 0x05ea, 0x07b1, 0x0830, 0x0a6b, 0x0c86, 0x0edd,
+    0x1384, 0x11df, 0x1732, 0x1569, 0x1ae8, 0x18b3, 0x1e5e, 0x1c05,
+    0x2dd7, 0x2f8c, 0x2961, 0x2b3a, 0x24bb, 0x26e0, 0x200d, 0x2256,
+    0x3f0f, 0x3d54, 0x3bb9, 0x39e2, 0x3663, 0x3438, 0x32d5, 0x308e,
+    0x0867, 0x0a3c, 0x0cd1, 0x0e8a, 0x010b, 0x0350, 0x05bd, 0x07e6,
+    0x1abf, 0x18e4, 0x1e09, 0x1c52, 0x13d3, 0x1188, 0x1765, 0x153e,
+    0x369a, 0x34c1, 0x322c, 0x3077, 0x3ff6, 0x3dad, 0x3b40, 0x391b,
+    0x2442, 0x2619, 0x20f4, 0x22af, 0x2d2e, 0x2f75, 0x2998, 0x2bc3,
+    0x132a, 0x1171, 0x179c, 0x15c7, 0x1a46, 0x181d, 0x1ef0, 0x1cab,
+    0x01f2, 0x03a9, 0x0544, 0x071f, 0x089e, 0x0ac5, 0x0c28, 0x0e73,
+    0x3fa1, 0x3dfa, 0x3b17, 0x394c, 0x36cd, 0x3496, 0x327b, 0x3020,
+    0x2d79, 0x2f22, 0x29cf, 0x2b94, 0x2415, 0x264e, 0x20a3, 0x22f8,
+    0x1a11, 0x184a, 0x1ea7, 0x1cfc, 0x137d, 0x1126, 0x17cb, 0x1590,
+    0x08c9, 0x0a92, 0x0c7f, 0x0e24, 0x01a5, 0x03fe, 0x0513, 0x0748
+};
+
+const uint8_t utilTopN[9] = { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
+
 
 //Tom Magic....
-bool BalanceFlage = false;
+bool BalanceFlag = false;
 bool BmbTimeout = true;
 uint16_t LoopState = 0;
 uint16_t LoopRanCnt =0;
 uint8_t WakeCnt = 0;
 uint8_t WaitCnt = 0;
-uint8_t IdleCnt = 0;
+uint16_t IdleCnt = 0;
 uint8_t ChipNum =0;
 float CellVMax = 0;
 float CellVMin = 5000;
@@ -138,6 +183,9 @@ float TempMax = 0;
 float TempMin = 1000;
 uint16_t SendDelay = 1000;
 uint32_t lasttime = 0;
+bool BalEven = false;
+
+float Cell1start, Cell2start = 0;
 
 void BATMan::BatStart()
 {
@@ -239,12 +287,10 @@ void BATMan::StateMachine()
     case 6: //first state check if there is time out of commms requiring full wake
     {
         WakeUP();//send wake up 4 times for 4 bmb boards
+        GetData(0x50);//Read Cfg
         WriteCfg();
-        delay(SendDelay);
-        WakeUP();//send wake up 4 times for 4 bmb boards
-        WriteCfg();
-        delay(SendDelay);
-        WakeUP();//send wake up 4 times for 4 bmb boards
+        GetData(0x50);//Read Cfg
+        Generic_Send_Once(Unmute, 2);//unmute
         LoopState++;
         break;
     }
@@ -255,20 +301,18 @@ void BATMan::StateMachine()
         upDateTemps();
         upDateCellVolts();
         upDateAuxVolts();
-
         LoopState++;
         break;
     }
 
     case 8: //Waiting State
     {
-        if(IdleCnt < 20)
-        {
-            IdleCnt++;
-        }
-        else
+        IdleCnt++;
+
+        if(IdleCnt > cycletime)
         {
             LoopState = 0;
+            IdleCnt = 0;
             LoopRanCnt++;
             Param::SetInt(Param::LoopCnt, LoopRanCnt);
         }
@@ -288,7 +332,7 @@ void BATMan::StateMachine()
 
 void BATMan::IdleWake()
 {
-    if(BalanceFlage == true)
+    if(BalanceFlag == true)
     {
         Generic_Send_Once(Mute, 2);//mute need to do more when balancing to dig into (Primen_CMD)
     }
@@ -479,30 +523,55 @@ void BATMan::WriteCfg()
 
     //uint8_t DCC16_9 = 0;
     //uint8_t DCC8_1 = 0;
-    uint16_t cfgwrt [24] = {0};
+    uint16_t cfgwrt [25] = {0};
 
     cfgwrt[0]= 0x112F;        //CMD
 
-    tempData[0]=0xF3;
-    tempData[1]=0x00;
-    tempData[2]=0x00;
-    tempData[3]=0x00;
-    tempData[4]=0x38;
-    tempData[5] = (calcCRC(tempData, 5));
-
-    Param::SetFloat(Param::idc,tempData[5]);
-
-    for (int h = 0; h < 7; h++)//write the 8 BMB registers
+    for (int h = 0; h < 8; h++)//write the 8 BMB registers
     {
-        cfgwrt[1+h*3] = 0xF300;
-        cfgwrt[2+h*3] = 0x0000;
-        cfgwrt[3+h*3] = 0x38DC;//Contains the PEC and other shit
-    }
 
+        tempData[0]=0xF3;
+        tempData[1]=0x00;
+        // Note can not be adjacent cells
+        //first copy all cells we want to balance
+        tempData[2]=CellBalCmd[7-h] & 0x00FF; //balancing 8-1
+        tempData[3]=(CellBalCmd[7-h] & 0xFF00)>>8; //balancing  16-9
+
+        //now alternate between even and odd using AND 0x55 or 0xAA
+
+        if(BalEven == false)
+        {
+            tempData[2] = tempData[2] & 0xAA;
+            tempData[3] = tempData[3] & 0xAA;
+        }
+        else
+        {
+            tempData[2] = tempData[2] & 0x55;
+            tempData[3] = tempData[3] & 0x55;
+        }
+
+        uint16_t payPec =0x0010;
+
+        crc14_bytes(4,tempData,&payPec);
+        crc14_bits(2,2,&payPec);
+
+        cfgwrt[1+h*3] = tempData[1] + (tempData[0] << 8);
+        cfgwrt[2+h*3] = tempData[3] + (tempData[2] << 8);
+        cfgwrt[3+h*3] = payPec;//Contains the PEC and other shit
+
+    }
+    if(BalEven == false)
+    {
+        BalEven = true;
+    }
+    else
+    {
+        BalEven = false;
+    }
 
     DigIo::BatCS.Clear();
 
-    for (int cnt = 0; cnt < 24; cnt++)
+    for (int cnt = 0; cnt < 25; cnt++)
     {
         receive1 = spi_xfer(SPI1, cfgwrt[cnt]);  // do a transfer
     }
@@ -563,6 +632,17 @@ void BATMan::upDateCellVolts(void)
     uint8_t Xr = 0;
     uint8_t Yc = 0;
     uint8_t h = 0;
+    uint16_t CellBalancing = 0;
+
+    BalanceFlag = false;
+    CellVMax = 0;
+    CellVMin = 5000;
+
+    for(uint8_t L =0; L < 8; L++)
+    {
+        CellBalCmd[L] = 0;
+    }
+
     while (h <= 100)
     {
         if(Voltage[Xr][Yc] > 0) //Check actual measurement present
@@ -578,6 +658,18 @@ void BATMan::upDateCellVolts(void)
                 Param::SetInt(Param::CellMin, h+1);
             }
             Param::SetFloat((Param::PARAM_NUM)(Param::u1 + h), (Voltage[Xr][Yc]));
+            //section to do balancing setup
+            if(Param::GetInt(Param::balance)) // Check if balancing flag is set
+            {
+                if((Param::GetFloat(Param::umin) + BalHys) < Voltage[Xr][Yc])
+                {
+                    CellBalCmd[Xr] = CellBalCmd[Xr]+(0x01 << Yc);//populate balancing command register
+                    CellBalancing++;
+                    BalanceFlag = true;
+                }
+            }
+            //
+
             h++; //next cell along
             Yc++; //next cell along
         }
@@ -596,13 +688,25 @@ void BATMan::upDateCellVolts(void)
             break;
         }
     }
+
+    //debugging balancing//
+    if(Cell1start == 0)
+    {
+        Cell1start= Param::GetFloat(Param::u1);
+        Cell2start=Param::GetFloat(Param::u2);
+        //Param::SetFloat(Param::dischargelim,Cell1start);
+        //Param::SetFloat(Param::chargelim,Cell2start);
+    }
+
+    Param::SetInt(Param::CellsBalancing, CellBalancing);
+    //
 }
 
 void BATMan::upDateAuxVolts(void)
 {
     Param::SetInt(Param::Chip1_5V,(rev16(Volts5v[0]))/12.5);
     Param::SetInt(Param::Chip2_5V,((Volts5v[1]))/12.5);
-    Param::SetInt(Param::soc,((Volts5v[2])));
+    //Param::SetInt(Param::soc,((Volts5v[2])));
 
     Param::SetFloat(Param::udc,0);
 
@@ -691,12 +795,7 @@ void BATMan::upDateTemps(void)
     }
     Param::SetFloat(Param::TempMax,TempMax);
     Param::SetFloat(Param::TempMin,TempMin);
-
-    Param::SetFloat(Param::chargelim,Cfg[0][0]);
-    Param::SetFloat(Param::dischargelim,Cfg[0][1]);
-
 }
-
 
 uint8_t BATMan::calcCRC(uint8_t *inData, uint8_t Length)
 {
@@ -708,4 +807,36 @@ uint8_t BATMan::calcCRC(uint8_t *inData, uint8_t Length)
         CRC8 = crcTable2f[crc_temp];
     }
     return(CRC8);
+}
+
+void BATMan::crc14_bytes( uint8_t len_B, uint8_t *bytes, uint16_t *crcP )
+{
+    uint8_t pos, idx;
+
+    for ( idx = 0; idx < len_B; idx++ )
+    {
+        pos = (uint8_t)((*crcP >> 6) ^ bytes[idx]);
+
+        *crcP = (uint16_t)( (0x3fff & (*crcP << 8)) ^ (uint16_t)(crc14table[pos]));
+    }
+}
+
+void BATMan::crc14_bits( uint8_t len_b,uint8_t inB, uint16_t *crcP )
+{
+    inB = inB & utilTopN[len_b];   // Mask out the bite we don't care about
+
+    *crcP ^= (uint16_t)((inB) << 6); /* move byte into MSB of 14bit CRC */
+
+    while( len_b-- )
+    {
+        if ((*crcP & 0x2000) != 0) /* test for MSB = bit 13 */
+        {
+            *crcP = (uint16_t)((*crcP << 1) ^ crcPolyBmData);
+        }
+        else
+        {
+            *crcP = (uint16_t)( *crcP << 1);
+        }
+    }
+    *crcP &= 0x3fff;
 }

@@ -44,6 +44,9 @@ private:
         return (x << 8) | (x >>8);
     }
     static       uint8_t calcCRC(uint8_t *inData, uint8_t Length);
+
+    static       void crc14_bytes( uint8_t len_B, uint8_t *bytes, uint16_t *crcP );
+    static       void crc14_bits( uint8_t len_b,uint8_t inB, uint16_t *crcP );
 };
 
 #endif /* BATMan_h */

@@ -39,7 +39,7 @@
  */
 
 //Define a version string of your firmware here
-#define VER 0.02.A
+#define VER 0.03.A
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -61,7 +61,7 @@
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      9  ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
-    VALUE_ENTRY(soc,         "As",   2002 ) \
+    VALUE_ENTRY(soc,         "%",   2002 ) \
     VALUE_ENTRY(chargelim,   "A",    2003 ) \
     VALUE_ENTRY(dischargelim,"A",    2004 ) \
     VALUE_ENTRY(chargeVlim,  "V",    2157 ) \
@@ -212,6 +212,7 @@
     VALUE_ENTRY(ChipV7,       "V",   2136 ) \
     VALUE_ENTRY(ChipV8,       "V",   2137 ) \
     VALUE_ENTRY(CellsPresent,  "",   2128 ) \
+    VALUE_ENTRY(CellsBalancing,  "",   2160 ) \
     VALUE_ENTRY(LoopCnt,      "",    2127 ) \
     VALUE_ENTRY(LoopState,    "",    2131 ) \
     VALUE_ENTRY(cpuload,     "%",    2122 )
