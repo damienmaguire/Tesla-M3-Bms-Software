@@ -50,3 +50,6 @@ stm32_m3bms.bin
 stm32_m3bms.hex
 *.o
 *.map
+*.map
+*.o
+*.o
