@@ -34,6 +34,7 @@
 		<Unit filename="include/BMSUtil.h" />
 		<Unit filename="include/BatMan.h" />
 		<Unit filename="include/CAN_Common.h" />
+		<Unit filename="include/MAXbms.h" />
 		<Unit filename="include/ModelS.h" />
 		<Unit filename="include/anain_prj.h" />
 		<Unit filename="include/digio_prj.h" />
@@ -92,6 +93,7 @@
 		<Unit filename="src/BMSUtil.cpp" />
 		<Unit filename="src/BatMan.cpp" />
 		<Unit filename="src/CAN_Common.cpp" />
+		<Unit filename="src/MAXbms.cpp" />
 		<Unit filename="src/ModelS.cpp" />
 		<Unit filename="src/hwinit.cpp" />
 		<Unit filename="src/main.cpp" />

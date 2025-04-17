@@ -42,6 +42,7 @@
 #include "ModelS.h"
 #include "CAN_Common.h"
 #include "BMSUtil.h"
+#include "MAXbms.h"
 
 #define PRINT_JSON 0
 
@@ -53,6 +54,7 @@ extern "C" void __cxa_pure_virtual()
 static Stm32Scheduler* scheduler;
 static CanHardware* can;
 static CanMap* canMap;
+static uint8_t BMStype;
 
 //sample 100ms task
 static void Ms100Task(void)
@@ -62,7 +64,16 @@ static void Ms100Task(void)
     float cpuLoad = scheduler->GetCpuLoad();
     Param::SetFloat(Param::cpuload, cpuLoad / 10);
 
-    BATMan::loop();
+//!!! to change to BMS class with selectable types under it to clean up code and simplify interactions//
+    if(BMStype == BMS_M3)
+    {
+        BATMan::loop();
+    }
+    else if(BMStype == BMS_MAX)
+    {
+        MAXbms::Task100Ms();
+    }
+///////////////
     BMSUtil::UpdateSOC();
     CAN_Common::Task100Ms();
 }
@@ -73,7 +84,16 @@ static void Ms10Task(void)
     //Set timestamp of error message
     ErrorMessage::SetTime(rtc_get_counter_val());
 
+//!!! to change to BMS class with selectable types under it to clean up code and simplify interactions//
+    if(BMStype == BMS_M3)
+    {
 
+    }
+    else if(BMStype == BMS_MAX)
+    {
+        MAXbms::Task10Ms();
+    }
+////////////////////////////////
 }
 
 /** This function is called when the user changes a parameter */
@@ -93,9 +113,9 @@ static void HandleClear()//Must add the ids to be received here as this set the 
 
 }
 
-static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc)//Here we decide what to to with the received ids. e.g. call a function in another class etc.
+static bool CanCallback(uint32_t id, uint32_t data[2])//, uint8_t dlc)//Here we decide what to to with the received ids. e.g. call a function in another class etc.
 {
-    dlc=dlc;
+
     switch (id)
     {
     case 0x100:
@@ -157,10 +177,19 @@ extern "C" int main(void)
     Terminal t(USART3, termCmds);
     TerminalCommands::SetCanMap(canMap);
 
-    BATMan::BatStart();
+    BMStype = Param::GetInt(Param::bmstype); //pull BMS type
 
     s.AddTask(Ms10Task, 10);
     s.AddTask(Ms100Task, 100);
+
+    if(BMStype == BMS_M3)
+    {
+        BATMan::BatStart();
+    }
+    else if(BMStype == BMS_MAX)
+    {
+        MAXbms::MaxStart();
+    }
 
     Param::SetInt(Param::version, 4);
     Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation

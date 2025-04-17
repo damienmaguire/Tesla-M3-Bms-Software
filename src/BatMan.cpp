@@ -629,9 +629,10 @@ void BATMan::Generic_Send_Once(uint16_t Command[], uint8_t len)
 
 void BATMan::upDateCellVolts(void)
 {
-    uint8_t Xr = 0;
-    uint8_t Yc = 0;
-    uint8_t h = 0;
+    uint8_t Xr = 0; //BMB number
+    uint8_t Yc = 0; //Cell voltage register number
+    uint8_t hc = 0; //Cells present per chip
+    uint8_t h = 0; //Spot value index
     uint16_t CellBalancing = 0;
 
     BalanceFlag = false;
@@ -645,39 +646,46 @@ void BATMan::upDateCellVolts(void)
 
     while (h <= 100)
     {
-        if(Voltage[Xr][Yc] > 0) //Check actual measurement present
+        if(Yc < 14) //Check actual measurement present
         {
-            if (CellVMax< Voltage[Xr][Yc])
+            if(Voltage[Xr][Yc] > 10) //Check actual measurement present
             {
-                CellVMax =  Voltage[Xr][Yc];
-                Param::SetInt(Param::CellMax, h+1);
-            }
-            if (CellVMin > Voltage[Xr][Yc])
-            {
-                CellVMin =  Voltage[Xr][Yc];
-                Param::SetInt(Param::CellMin, h+1);
-            }
-            Param::SetFloat((Param::PARAM_NUM)(Param::u1 + h), (Voltage[Xr][Yc]));
-            //section to do balancing setup
-            if(Param::GetInt(Param::balance)) // Check if balancing flag is set
-            {
-                if((Param::GetFloat(Param::umin) + BalHys) < Voltage[Xr][Yc])
+                if (CellVMax< Voltage[Xr][Yc])
                 {
-                    CellBalCmd[Xr] = CellBalCmd[Xr]+(0x01 << Yc);//populate balancing command register
-                    CellBalancing++;
-                    BalanceFlag = true;
+                    CellVMax =  Voltage[Xr][Yc];
+                    Param::SetInt(Param::CellMax, h+1);
                 }
+                if (CellVMin > Voltage[Xr][Yc])
+                {
+                    CellVMin =  Voltage[Xr][Yc];
+                    Param::SetInt(Param::CellMin, h+1);
+                }
+                Param::SetFloat((Param::PARAM_NUM)(Param::u1 + h), (Voltage[Xr][Yc]));
+                //section to do balancing setup
+                if(Param::GetInt(Param::balance)) // Check if balancing flag is set
+                {
+                    if((Param::GetFloat(Param::umin) + BalHys) < Voltage[Xr][Yc])
+                    {
+                        CellBalCmd[Xr] = CellBalCmd[Xr]+(0x01 << Yc);//populate balancing command register
+                        CellBalancing++;
+                        BalanceFlag = true;
+                    }
+                }
+                //
+                h++; //next cell spot value along
+                hc++; //one more cell present
             }
-            //
 
-            h++; //next cell along
             Yc++; //next cell along
         }
         else
         {
-            Yc =0; //reset Cell colum
+            Param::SetInt((Param::PARAM_NUM)(Param::Chip1Cells+Xr),hc);
+            Yc = 0; //reset Cell colum
+            hc = 0; //reset cell count per chip
             Xr++; //next BMB
         }
+
         if(Xr == ChipNum)
         {
             Param::SetFloat(Param::umax,CellVMax);
@@ -689,7 +697,7 @@ void BATMan::upDateCellVolts(void)
         }
     }
 
-    //debugging balancing//
+//debugging balancing//
     if(Cell1start == 0)
     {
         Cell1start= Param::GetFloat(Param::u1);
@@ -699,7 +707,7 @@ void BATMan::upDateCellVolts(void)
     }
 
     Param::SetInt(Param::CellsBalancing, CellBalancing);
-    //
+//
 }
 
 void BATMan::upDateAuxVolts(void)

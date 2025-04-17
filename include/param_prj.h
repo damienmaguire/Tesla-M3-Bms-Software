@@ -39,7 +39,7 @@
  */
 
 //Define a version string of your firmware here
-#define VER 0.03.A
+#define VER 0.05.TA
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -50,7 +50,7 @@
 //Next value Id: 2126
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
-    PARAM_ENTRY(CAT_BMS,     type,        TYPES,     0,      1,      0,      1   ) \
+    PARAM_ENTRY(CAT_BMS,     bmstype,        TYPES,     0,      2,      0,      1   ) \
     PARAM_ENTRY(CAT_BMS,     numbmbs,     "",        1,      4,      1,      2   ) \
     PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      3   ) \
     PARAM_ENTRY(CAT_BMS,     nomcap,      "Ah",      0,      1000,   100,    4   ) \
@@ -212,7 +212,15 @@
     VALUE_ENTRY(ChipV7,       "V",   2136 ) \
     VALUE_ENTRY(ChipV8,       "V",   2137 ) \
     VALUE_ENTRY(CellsPresent,  "",   2128 ) \
-    VALUE_ENTRY(CellsBalancing,  "",   2160 ) \
+    VALUE_ENTRY(Chip1Cells,    "",   2161 ) \
+    VALUE_ENTRY(Chip2Cells,    "",   2162 ) \
+    VALUE_ENTRY(Chip3Cells,    "",   2163 ) \
+    VALUE_ENTRY(Chip4Cells,    "",   2164 ) \
+    VALUE_ENTRY(Chip5Cells,    "",   2165 ) \
+    VALUE_ENTRY(Chip6Cells,    "",   2166 ) \
+    VALUE_ENTRY(Chip7Cells,    "",   2167 ) \
+    VALUE_ENTRY(Chip8Cells,    "",   2168 ) \
+    VALUE_ENTRY(CellsBalancing,"",   2160 ) \
     VALUE_ENTRY(LoopCnt,      "",    2127 ) \
     VALUE_ENTRY(LoopState,    "",    2131 ) \
     VALUE_ENTRY(cpuload,     "%",    2122 )
@@ -223,7 +231,7 @@
 #define OFFON        "0=Off, 1=On"
 #define BAL          "0=None, 1=Discharge"
 #define IDCMODES     "0=Off, 1=AdcSingle, 2=IsaCan"
-#define TYPES        "0=Model_3, 1=Model_S"
+#define TYPES        "0=Model_3, 1=Model_S, 2=MAX"
 #define CAT_BMS      "BMS"
 #define CAT_SENS     "Sensor setup"
 #define CAT_COMM     "Communication"
@@ -243,6 +251,13 @@ enum _modes
     MOD_OFF = 0,
     MOD_RUN,
     MOD_LAST
+};
+
+enum _types
+{
+    BMS_M3 = 0,
+    BMS_TESLAS = 1,
+    BMS_MAX = 2
 };
 
 //Generated enum-string for possible errors
