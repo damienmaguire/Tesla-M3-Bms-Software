@@ -39,23 +39,25 @@
  */
 
 //Define a version string of your firmware here
-#define VER 0.05.TA
+#define VER 0.07.TA
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 8
-//Next value Id: 2126
+//Next param id (increase when adding new parameter!): 12
+//Next value Id: 2173
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
-    PARAM_ENTRY(CAT_BMS,     bmstype,        TYPES,     0,      2,      0,      1   ) \
+    PARAM_ENTRY(CAT_BMS,     bmstype,     TYPES,     0,      2,      0,     1   ) \
     PARAM_ENTRY(CAT_BMS,     numbmbs,     "",        1,      4,      1,      2   ) \
     PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      3   ) \
+    PARAM_ENTRY(CAT_BMS,    BallVthres,     "mV",   2800,   4500,   3900,      10   ) \
     PARAM_ENTRY(CAT_BMS,     nomcap,      "Ah",      0,      1000,   100,    4   ) \
-    PARAM_ENTRY(CAT_BMS,    CellVmax,     "mV",      3000, 4200,   4150,      5   ) \
-    PARAM_ENTRY(CAT_BMS,    CellVmin,     "mV",      2800, 3500,   3200,      6   ) \
+    PARAM_ENTRY(CAT_BMS,    CellVmax,     "mV",      3000,  4200,   4150,     5   ) \
+    PARAM_ENTRY(CAT_BMS,    CellVmin,     "mV",      2800,  3500,   3200,     6   ) \
+    PARAM_ENTRY(CAT_BMS,     VmInterval,   "S",      1.5,    1000,   10,     12   ) \
     PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",   -1000,  1000,   10,     7  ) \
     PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      8   ) \
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      9  ) \
@@ -73,9 +75,10 @@
     VALUE_ENTRY(TempMin,     "°C",   2156 ) \
     VALUE_ENTRY(uavg,        "mV",   2009 ) \
     VALUE_ENTRY(umin,        "mV",   2010 ) \
-    VALUE_ENTRY(CellMin,       "",   2129 ) \
+    VALUE_ENTRY(CellMin,       "",   2169 ) \
     VALUE_ENTRY(umax,        "mV",   2011 ) \
-    VALUE_ENTRY(CellMax,       "",   2130 ) \
+    VALUE_ENTRY(CellMax,       "",   2170 ) \
+    VALUE_ENTRY(CellsPresent,  "",   2159 ) \
     VALUE_ENTRY(u1,          "mV",   2012 ) \
     VALUE_ENTRY(u2,          "mV",   2013 ) \
     VALUE_ENTRY(u3,          "mV",   2014 ) \
@@ -177,6 +180,13 @@
     VALUE_ENTRY(u99,         "mV",   2111 ) \
     VALUE_ENTRY(u100,        "mV",   2112 ) \
     VALUE_ENTRY(u101,        "mV",   2113 ) \
+    VALUE_ENTRY(u102,        "mV",   2114 ) \
+    VALUE_ENTRY(u103,        "mV",   2115 ) \
+    VALUE_ENTRY(u104,        "mV",   2116 ) \
+    VALUE_ENTRY(u105,        "mV",   2117 ) \
+    VALUE_ENTRY(u106,        "mV",   2118 ) \
+    VALUE_ENTRY(u107,        "mV",   2119 ) \
+    VALUE_ENTRY(u108,        "mV",   2120 ) \
     VALUE_ENTRY(Cellt0_0,    "°C",   2140 ) \
     VALUE_ENTRY(Cellt0_1,    "°C",   2141 ) \
     VALUE_ENTRY(Cellt1_0,    "°C",   2142 ) \
@@ -193,25 +203,24 @@
     VALUE_ENTRY(Cellt6_1,    "°C",   2153 ) \
     VALUE_ENTRY(Cellt7_0,    "°C",   2154 ) \
     VALUE_ENTRY(Cellt7_1,    "°C",   2155 ) \
-    VALUE_ENTRY(Chipt0,      "°C",   2114 ) \
-    VALUE_ENTRY(Chipt1,      "°C",   2115 ) \
-    VALUE_ENTRY(Chipt2,      "°C",   2116 ) \
-    VALUE_ENTRY(Chipt3,      "°C",   2117 ) \
-    VALUE_ENTRY(Chipt4,      "°C",   2118 ) \
-    VALUE_ENTRY(Chipt5,      "°C",   2119 ) \
-    VALUE_ENTRY(Chipt6,      "°C",   2120 ) \
-    VALUE_ENTRY(Chipt7,      "°C",   2121 ) \
-    VALUE_ENTRY(Chip1_5V,    "mV",   2123 ) \
-    VALUE_ENTRY(Chip2_5V,    "mV",   2124 ) \
-    VALUE_ENTRY(ChipV1,       "V",   2125 ) \
-    VALUE_ENTRY(ChipV2,       "V",   2126 ) \
+    VALUE_ENTRY(Chipt0,      "°C",   2121 ) \
+    VALUE_ENTRY(Chipt1,      "°C",   2122 ) \
+    VALUE_ENTRY(Chipt2,      "°C",   2123 ) \
+    VALUE_ENTRY(Chipt3,      "°C",   2124 ) \
+    VALUE_ENTRY(Chipt4,      "°C",   2125 ) \
+    VALUE_ENTRY(Chipt5,      "°C",   2126 ) \
+    VALUE_ENTRY(Chipt6,      "°C",   2127 ) \
+    VALUE_ENTRY(Chipt7,      "°C",   2128 ) \
+    VALUE_ENTRY(Chip1_5V,    "mV",   2138 ) \
+    VALUE_ENTRY(Chip2_5V,    "mV",   2139 ) \
+    VALUE_ENTRY(ChipV1,       "V",   2130 ) \
+    VALUE_ENTRY(ChipV2,       "V",   2131 ) \
     VALUE_ENTRY(ChipV3,       "V",   2132 ) \
     VALUE_ENTRY(ChipV4,       "V",   2133 ) \
     VALUE_ENTRY(ChipV5,       "V",   2134 ) \
     VALUE_ENTRY(ChipV6,       "V",   2135 ) \
     VALUE_ENTRY(ChipV7,       "V",   2136 ) \
     VALUE_ENTRY(ChipV8,       "V",   2137 ) \
-    VALUE_ENTRY(CellsPresent,  "",   2128 ) \
     VALUE_ENTRY(Chip1Cells,    "",   2161 ) \
     VALUE_ENTRY(Chip2Cells,    "",   2162 ) \
     VALUE_ENTRY(Chip3Cells,    "",   2163 ) \
@@ -221,9 +230,9 @@
     VALUE_ENTRY(Chip7Cells,    "",   2167 ) \
     VALUE_ENTRY(Chip8Cells,    "",   2168 ) \
     VALUE_ENTRY(CellsBalancing,"",   2160 ) \
-    VALUE_ENTRY(LoopCnt,      "",    2127 ) \
-    VALUE_ENTRY(LoopState,    "",    2131 ) \
-    VALUE_ENTRY(cpuload,     "%",    2122 )
+    VALUE_ENTRY(LoopCnt,      "",    2171 ) \
+    VALUE_ENTRY(LoopState,    "",    2172 ) \
+    VALUE_ENTRY(cpuload,     "%",    2129 )
 
 
 /***** Enum String definitions *****/

@@ -179,9 +179,6 @@ extern "C" int main(void)
 
     BMStype = Param::GetInt(Param::bmstype); //pull BMS type
 
-    s.AddTask(Ms10Task, 10);
-    s.AddTask(Ms100Task, 100);
-
     if(BMStype == BMS_M3)
     {
         BATMan::BatStart();
@@ -190,6 +187,9 @@ extern "C" int main(void)
     {
         MAXbms::MaxStart();
     }
+
+    s.AddTask(Ms10Task, 10);
+    s.AddTask(Ms100Task, 100);
 
     Param::SetInt(Param::version, 4);
     Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation

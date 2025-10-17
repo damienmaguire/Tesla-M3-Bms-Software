@@ -29,8 +29,8 @@ Tom de Bree - Volt Influx
 Damien Mcguire - EV Bmw
 */
 
-#define cycletime 20
-float BalHys = 20; //mV balance limit
+#define cycletime 92 //in 100ms. Measurement is 800ms + (cycletime x 100ms)
+//float BalHys = 20; //mV balance limit - Made dynamic
 
 uint16_t WakeUp[2] = {0x2ad4, 0x0000};
 uint16_t Mute[2] = {0x20dd, 0x0000};
@@ -287,7 +287,7 @@ void BATMan::StateMachine()
     case 6: //first state check if there is time out of commms requiring full wake
     {
         WakeUP();//send wake up 4 times for 4 bmb boards
-        GetData(0x50);//Read Cfg
+        //GetData(0x50);//Read Cfg
         WriteCfg();
         GetData(0x50);//Read Cfg
         Generic_Send_Once(Unmute, 2);//unmute
@@ -309,7 +309,17 @@ void BATMan::StateMachine()
     {
         IdleCnt++;
 
-        if(IdleCnt > cycletime)
+
+
+        if(IdleCnt & 0x01 && (IdleCnt < (Param::GetFloat(Param::VmInterval)*10)-8 - 20))//subtract minimum time for a discharge timer + run every other loop
+        {
+            WakeUP();
+            WriteCfg();
+        }
+
+
+
+        if(IdleCnt > (Param::GetFloat(Param::VmInterval)*10)-8)//VmInterval [in S] x 10 is loops to run - 8 loops for measuring
         {
             LoopState = 0;
             IdleCnt = 0;
@@ -560,14 +570,6 @@ void BATMan::WriteCfg()
         cfgwrt[3+h*3] = payPec;//Contains the PEC and other shit
 
     }
-    if(BalEven == false)
-    {
-        BalEven = true;
-    }
-    else
-    {
-        BalEven = false;
-    }
 
     DigIo::BatCS.Clear();
 
@@ -634,6 +636,9 @@ void BATMan::upDateCellVolts(void)
     uint8_t hc = 0; //Cells present per chip
     uint8_t h = 0; //Spot value index
     uint16_t CellBalancing = 0;
+    bool AllowBalancing = false;
+    float OldUmin = Param::GetFloat(Param::umin);
+    float BalHys = 200; //mV set high
 
     BalanceFlag = false;
     CellVMax = 0;
@@ -642,6 +647,42 @@ void BATMan::upDateCellVolts(void)
     for(uint8_t L =0; L < 8; L++)
     {
         CellBalCmd[L] = 0;
+    }
+
+    //Determine if we should be balancing
+
+    if(Param::GetFloat(Param::BallVthres) < Param::GetFloat(Param::umax))//Only balance if highest cell is above Balance Threshold
+    {
+        AllowBalancing = true;
+        //Do magic on the hyst on balancing adjustment
+        float dV = Param::GetFloat(Param::deltaV); //extract deltaV
+
+        if(dV > 32)
+        {
+            BalHys = 16;
+        }
+        else if(dV > 16)
+        {
+            BalHys = 8;
+        }
+        else if(dV > 8)
+        {
+            BalHys = 4;
+        }
+        else if(dV > 4)
+        {
+            BalHys = 2;
+        }
+
+        if(BalEven == false)//Flip between balancing odd and even cells
+        {
+            BalEven = true;
+        }
+        else
+        {
+            BalEven = false;
+        }
+
     }
 
     while (h <= 100)
@@ -662,9 +703,9 @@ void BATMan::upDateCellVolts(void)
                 }
                 Param::SetFloat((Param::PARAM_NUM)(Param::u1 + h), (Voltage[Xr][Yc]));
                 //section to do balancing setup
-                if(Param::GetInt(Param::balance)) // Check if balancing flag is set
+                if(Param::GetInt(Param::balance) && AllowBalancing == true) // Check if balancing flag is set
                 {
-                    if((Param::GetFloat(Param::umin) + BalHys) < Voltage[Xr][Yc])
+                    if((OldUmin + BalHys) < Voltage[Xr][Yc])//USE OLD umin
                     {
                         CellBalCmd[Xr] = CellBalCmd[Xr]+(0x01 << Yc);//populate balancing command register
                         CellBalancing++;
@@ -697,17 +738,7 @@ void BATMan::upDateCellVolts(void)
         }
     }
 
-//debugging balancing//
-    if(Cell1start == 0)
-    {
-        Cell1start= Param::GetFloat(Param::u1);
-        Cell2start=Param::GetFloat(Param::u2);
-        //Param::SetFloat(Param::dischargelim,Cell1start);
-        //Param::SetFloat(Param::chargelim,Cell2start);
-    }
-
     Param::SetInt(Param::CellsBalancing, CellBalancing);
-//
 }
 
 void BATMan::upDateAuxVolts(void)

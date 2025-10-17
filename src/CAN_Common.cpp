@@ -220,6 +220,6 @@ void CAN_Common::StandardCanFrames()//CanHardware* c)
 
 void CAN_Common::HandleCan(uint32_t data[2])
 {
-    uint8_t* bytes = (uint8_t*)data;
+    //uint8_t* bytes = (uint8_t*)data;
 
 }
