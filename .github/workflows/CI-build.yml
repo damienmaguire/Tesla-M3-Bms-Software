@@ -24,24 +24,16 @@ jobs:
           echo "Number of processors:" `nproc`
           make get-deps -j `nproc`
 
-      - name: Build Stm32-vcu firmware
+      - name: Build stm32_m3bms firmware
         run: |
           make
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Stm32-vcu firmware binary
-          path: stm32_vcu.bin
+          name: stm32_m3bms firmware binary
+          path: stm32_m3bms.bin
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Stm32-vcu firmware hex
-          path: stm32_vcu.hex
-
-      - name: Build unit tests on host
-        run: |
-          make Test
-
-      - name: Run unit tests on host
-        run: |
-          test/test_vcu
+          name: stm32_m3bms firmware hex
+          path: stm32_m3bms.hex
