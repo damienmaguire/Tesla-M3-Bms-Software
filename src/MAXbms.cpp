@@ -11,26 +11,32 @@ const uint8_t initError = 0x01;
 const uint8_t mismatchBefore = 0x02;
 const uint8_t mismatchAfter = 0x04;
 const uint8_t receiveBuffer = 0x08;
-
 // BMS parameters
-const uint8_t numberOfCellsPerSlave = 6;
+const uint8_t numberOfCellsPerSlaveMax = 12;
+const uint8_t numberOfTempsPerSlaveMax = 3;
+static uint8_t numberOfSlaves = 1;
+static uint8_t numberOfCellsPerSlave = 6;
+static uint8_t CellsPresent = 0;
 
 // Testing Variables
 static uint8_t loop = 0;
+static uint8_t loopstate = 0;
 static bool SetupComplete = false;
 
 //Data
 // Variable declaration
-static uint16_t cellVoltage[numberOfSlaves * numberOfCellsPerSlave];
-static int8_t cellBlockTemp[2 * numberOfSlaves];
-static int16_t dieTemperature[numberOfSlaves];
-
+static uint16_t cellVoltage[numberOfSlavesMax * numberOfCellsPerSlaveMax];
+static float cellBlockTemp[3 * numberOfSlavesMax];
+static int16_t dieTemperature[numberOfSlavesMax];
+static bool TempToggle = false;
 
 void MAXbms::MaxStart()
 {
+    numberOfSlaves = Param::GetInt(Param::numbmbs);
     dataReady = 0x02;  // Reset data ready
     daisyChainInit();
     setupSlaves();
+    iwdg_reset();
     SetupComplete = true;
 }
 
@@ -44,16 +50,21 @@ void MAXbms::Task100Ms()
     if(loop == 0 && SetupComplete == true)
     {
         measureCellData();
+        loopstate = 1;
     }
 
-    if(loop < 20)//20x100ms
+    if(loop < (Param::GetFloat(Param::VmInterval)*10))//20x100ms
     {
         loop++;
+        UpdateStats();
     }
     else
     {
         loop = 0;
+        loopstate = 0;
     }
+
+    Param::SetInt(Param::LoopState, loopstate);
 }
 
 void MAXbms::SpiTest()
@@ -154,6 +165,10 @@ void MAXbms::daisyChainInit()
     DigIo::BatCS.Clear();
     spi_xfer(SPI1,0xE0);  // Clear receive buffer
     DigIo::BatCS.Set();
+    // 3.5, Clear transmit buffer
+    DigIo::BatCS.Clear();
+    spi_xfer(SPI1,0x20);  // Clear receive buffer
+    DigIo::BatCS.Set();
     Param::SetInt(Param::LoopState,3);
 
     // 4, Wake-up UART slave devices
@@ -165,14 +180,13 @@ void MAXbms::daisyChainInit()
 
     // 5, Wait for all UART slave devices to wake up
     uint32_t watchdogTimer = 0;
-    check = 0;
-    while (check != 0x21)  // If RX_Status = 21h, continue. Otherwise, repeat transaction until true or timeout
+    uint16_t check2 = 0;
+    while (check2 != 0x21)  // If RX_Status = 21h, continue. Otherwise, repeat transaction until true or timeout
     {
         DigIo::BatCS.Clear();
         spi_xfer(SPI1,0x01);          // Read RX_Status register
-        check = spi_xfer(SPI1,0x01);  // Read RX_Status register
+        check2 = spi_xfer(SPI1,0x01);  // Read RX_Status register
         DigIo::BatCS.Set();
-        Param::SetInt(Param::LoopState,5);
         if (watchdogTimer > 1000)  // Watchdog timer of 100ms
         {
             //Serial.println("UARTSlaveDevicesWakeUp WD timeout");
@@ -189,8 +203,11 @@ void MAXbms::daisyChainInit()
     Param::SetInt(Param::LoopState,6);
 
     // 7, Wait for null message to be received
+
     // 8, Clear transmit buffer
+
     // 9, Clear receive buffer
+
     clearBuffers();
 
     // 10, Load the HELLOALL command sequence into the load queue
@@ -216,6 +233,7 @@ void MAXbms::daisyChainInit()
     if (!((data[0] == 0x03) && (data[1] == 0x57) && (data[2] == 0x00) && (data[3] == 0x00)))
     {
         errorByte |= initError;
+        //spi_xfer(SPI1,0x69);  //Error
     }
     DigIo::BatCS.Set();
 
@@ -235,6 +253,7 @@ void MAXbms::daisyChainInit()
     if (!((data[0] == 0x57) && (data[1] == 0x00) && (data[2] == numberOfSlaves)))
     {
         errorByte |= initError;
+        //spi_xfer(SPI1,0x69);  //Error
     }
     DigIo::BatCS.Set();
     Param::SetInt(Param::LoopState, 14);
@@ -262,21 +281,26 @@ void MAXbms::clearBuffers()
 {
     // Wait for null message to be received
     uint32_t watchdogTimer = 0;
-    uint8_t check = 0x01;
-    while (check & 0x01)  // If RX_Status[0] (RX_Empty_Status) is false, continue. If true, then repeat transaction until false.
+    uint8_t check3 = 0x01;
+    uint8_t loop3 = 1;
+    while (loop3 == 1)  // If RX_Status[0] (RX_Empty_Status) is false, continue. If true, then repeat transaction until false.
     {
         DigIo::BatCS.Clear();
         spi_xfer(SPI1,0x01);          // Read RX_Status register
-        check = spi_xfer(SPI1,0x01);  // Read RX_Status register
+        check3 = spi_xfer(SPI1,0x01);  // Read RX_Status register
+        if(check3 == 0x11)
+        {
+            loop3 = 0;
+        }
         DigIo::BatCS.Set();
 
-        Param::SetInt(Param::LoopState,7);
+        //Param::SetInt(Param::LoopState,7);
 
         if (watchdogTimer > 100)  // Watchdog timer of 10ms
         {
-            watchdogTimer++;
             return;
         }
+        watchdogTimer++;
     }
 
     // Clear transmit buffer
@@ -299,32 +323,48 @@ void MAXbms::clearBuffers()
 void MAXbms::transmitQueue()
 {
     uint32_t watchdogTimer = 0;
-    uint8_t check = 0;
+    uint8_t check4 = 0;
+    uint8_t loop4 = 1;
 
     // Start transmitting the loaded sequence from the transmit queue
     DigIo::BatCS.Clear();
     spi_xfer(SPI1,0xB0);  // WR_NXT_LD_Q SPI command byte (write the next load queue)
     DigIo::BatCS.Set();
-    Param::SetInt(Param::LoopState, 12);
+    //::SetInt(Param::LoopState, 12);
 
     // Check if a message has been received into the receive buffer
-    while (!(check &= 0x12))  // If RX_Status[1] is true, continue. If false, then repeat transaction until true
+    while (loop4 == 1)  // If RX_Status[1] is true, continue. If false, then repeat transaction until true
     {
         // Poll RX_Stop_Status bit
         DigIo::BatCS.Clear();
         spi_xfer(SPI1,0x01);          // Read RX_Status register
-        check = spi_xfer(SPI1,0x01);  // Read RX_Status register
+        check4 = spi_xfer(SPI1,0x01);  // Read RX_Status register
+        if((check4 & 0x12) > 0 && watchdogTimer > 10)
+        {
+            loop4 = 0;
+        }
         DigIo::BatCS.Set();
-        Param::SetInt(Param::LoopState,13);
+        //Param::SetInt(Param::LoopState,13);
 
         if (watchdogTimer > 100)  // Watchdog timer of 10ms
         {
             //Serial.println("transmitQueue WD timeout");
             return;
-
         }
+        watchdogTimer++;
     }
-    //delay(1);  // Needed to work, unknown why?
+    watchdogTimer = 0;
+    /*
+        while (loop4 == 0)
+        {
+            watchdogTimer++;
+            if (watchdogTimer > 10)  // Watchdog timer of 10ms
+            {
+                return;
+            }
+        }
+        //delay(1);  // Needed to work, unknown why?
+        */
 }
 
 
@@ -407,7 +447,7 @@ void MAXbms::readAllSlaves(uint8_t dataRegister, bool setupDone)  // Read all sl
     {
         uint8_t checkPEC = calculatePEC(readRegisterData, (2 * numberOfSlaves + 3));
         // Check check-byte, PEC and alive-counter
-        if (!((readRegisterData[(2 * numberOfSlaves + 2)] == 0x00) && (readRegisterData[(2 * numberOfSlaves + 3)] == checkPEC) && (readRegisterData[(2 * numberOfSlaves + 4)] == numberOfSlaves)))
+        if (!(((readRegisterData[(2 * numberOfSlaves + 2)] == 0x00)||(readRegisterData[(2 * numberOfSlaves + 2)] == 0x40)) && (readRegisterData[(2 * numberOfSlaves + 3)] == checkPEC) && (readRegisterData[(2 * numberOfSlaves + 4)] == numberOfSlaves)))
         {
             errorByte |= mismatchAfter;
             if (readRegisterData[(2 * numberOfSlaves + 2)] != 0x00)
@@ -416,6 +456,10 @@ void MAXbms::readAllSlaves(uint8_t dataRegister, bool setupDone)  // Read all sl
                 writeAllSlaves(0x02, 0x0000, true);  // Clear STATUS register
                 //Serial.println("STATUS cleared");
             }
+        }
+        if((readRegisterData[(2 * numberOfSlaves + 2)] == 0x40))
+        {
+            Param::SetInt(Param::PecErrCnt,Param::GetInt(Param::PecErrCnt)+1);
         }
     }
 
@@ -754,10 +798,13 @@ void MAXbms::writeAddressedSlave(uint8_t dataRegister, uint16_t data, uint8_t ad
 **********************************************/
 void MAXbms::readData()
 {
+
     for (int i = 0; i < numberOfCellsPerSlave; i++)
     {
         readAllSlaves((0x20 + i), true);  // Read CELL 1-numberOfCellsPerSlave of all slaves
     }
+    //Need to drive GPIO to force logic gates to connect temp sensors GPIO 0x11 set to 0x7001 - NTC1-AIN1 + NTC2-AIN2
+    // GPIO 0x11 set to 0x7002 - NTC3-AIN2 + AIN1 - nothing
     readAllSlaves(0x2D, true);  // Read AIN1 of all slaves (Cell temperature)
     readAllSlaves(0x2E, true);  // Read AIN2 of all slaves (Cell temperature)
     readAllSlaves(0x50, true);  // Read DIAG (Die temperature) of all slaves
@@ -785,6 +832,7 @@ void MAXbms::storeCellTemperature(uint8_t dataRegister, uint8_t readRegisterData
 {
     for (int i = 0; i < numberOfSlaves; i++)
     {
+        /* Old KIA Code
         //uint16_t beta = 3800;
         uint16_t dataADC = ((readRegisterData[(2 * numberOfSlaves + 1) - i * 2] << 8) + readRegisterData[(2 * numberOfSlaves) - i * 2]);
         dataADC = (dataADC >> 10);  // >> 4 for 12bit value & >> 6 for correct array index size
@@ -797,17 +845,48 @@ void MAXbms::storeCellTemperature(uint8_t dataRegister, uint8_t readRegisterData
         {
             dataADC = 55;
         }
+        */
 
-        if (0x2D == dataRegister)
+        uint16_t measTemperature = uint16_t(uint16_t(readRegisterData[3 + (i * 2)] << 4) + uint16_t(readRegisterData[2 + (i * 2)]>>4));
+
+        if(TempToggle)
         {
-            cellBlockTemp[i * 2] = tempMap[dataADC - 7];
-            Param::SetInt((Param::PARAM_NUM)(Param::Cellt0_0 + i*2),cellBlockTemp[i * 2]);
-
+            if (0x2E == dataRegister)//Toggled is NTC3
+            {
+                cellBlockTemp[i * 3 + 2] = float(2450 - measTemperature)/31;
+                //Param::SetFloat(Param::Cellt1_0,cellBlockTemp[i * 3 + 2]);
+                //Param::SetFloat(Param::Cellt3_0,measTemperature);
+                //Param::SetFloat((Param::PARAM_NUM)(Param::Cellt1_0 + i*2),cellBlockTemp[i * 3 + 2]); // For now use Temp 3 as 2
+            }
         }
-        else if (0x2E == dataRegister)
+        else
         {
-            cellBlockTemp[i * 2 + 1] = tempMap[dataADC - 7];
-            Param::SetInt((Param::PARAM_NUM)(Param::Cellt0_1 + i*2),cellBlockTemp[i * 2 + 1]);
+            if (0x2D == dataRegister)//Not toggled so NTC1
+            {
+                cellBlockTemp[i * 3] = float(measTemperature - 1680)/32;
+                Param::SetFloat((Param::PARAM_NUM)(Param::Cellt0_0 + i*2), cellBlockTemp[i * 3]);
+                //Param::SetFloat(Param::Cellt2_0,measTemperature);
+                //Param::SetFloat((Param::PARAM_NUM)(Param::Cellt0_0 + i*2),cellBlockTemp[i * 3]); //Not reading correctly right now
+            }
+            else if (0x2E == dataRegister)//Not toggled so NTC2
+            {
+                cellBlockTemp[i * 3 + 1] = float(2450 - measTemperature)/31;
+
+                //Param::SetFloat(Param::Cellt2_1,measTemperature);
+                //Param::SetFloat((Param::PARAM_NUM)(Param::Cellt0_1 + i*2),cellBlockTemp[i * 3 + 1]); // For now use Temp 2 as1
+            }
+        }
+
+        if (0x2E == dataRegister)//NTC2 or NTC3
+        {
+            if(cellBlockTemp[i * 3 + 1]> cellBlockTemp[i * 3 + 2])//if NTC 2 is higher then NTC 3
+            {
+                Param::SetFloat((Param::PARAM_NUM)(Param::Cellt0_1 + i*2), cellBlockTemp[i * 3 + 1]);
+            }
+            else
+            {
+                Param::SetFloat((Param::PARAM_NUM)(Param::Cellt0_1 + i*2), cellBlockTemp[i * 3 + 2]);
+            }
         }
     }
 }
@@ -872,6 +951,18 @@ void MAXbms::measureCellData()
     uint32_t watchdogTimer = 0;
 
     dataReady = 0x00;
+
+    if(TempToggle)//toggle between one set and the other
+    {
+        writeAllSlaves(0x11, 0x7001, true); // Set DRV 1 - Cell temp 1 +2
+        TempToggle = false; //set to read NTC1+2
+    }
+    else
+    {
+        writeAllSlaves(0x11, 0x7002, true); // // Set DRV 1 - Cell temp 3 +4
+        TempToggle = true; //set to read NTC3
+    }
+
     //writeAllSlaves(0x13, 0x0001, true); // Set SCANCTRL, SCAN
     writeAllSlaves(0x13, 0x0041, true);  // Set SCANCTRL, SCAN and 32 oversamples
 
@@ -911,6 +1002,8 @@ void MAXbms::setupSlaves()
     //writeAllSlaves(0x19, 0x003F, true); // Set ACQCFG, 64x6us settling time before AUX1 measurement
     //writeAllSlaves(0x18, 0x1500, true); // Set WATCHDOG, Set watchdg for cell balancing to 5s
     //writeAllSlaves(0x13, 0x0001, true); // Set SCANCTRL, SCAN
+    //Switch on THRM voltage
+    writeAllSlaves(0x19, 0x033F, true); // Set ACQCFG, Maunal Thrmmode AUX voltage, set measure to max.
 }
 
 uint8_t MAXbms::lowByte(int data)
@@ -921,4 +1014,68 @@ uint8_t MAXbms::lowByte(int data)
 uint8_t MAXbms::highByte(int data)
 {
     return((data >> 8) & 0xFF);
+}
+
+void MAXbms::UpdateStats()
+{
+    uint32_t Vtotal = 0;
+    uint16_t MaxVoltTemp = 0;
+    uint16_t CellMax = 0;
+    uint16_t MinVoltTemp = 9000;
+    uint16_t CellMin = 0;
+    float MinTempTemp = -90.0;
+    float MaxTempTemp = 390.0;
+    uint16_t CellCnt = 0;
+
+    for (int h = 0; h < numberOfSlaves; h++) //go through all connected slaves
+    {
+        for (int g = 0; g < numberOfCellsPerSlaveMax; g++) //go through all voltages
+        {
+            if(cellVoltage[(h * numberOfCellsPerSlaveMax)+g] > MaxVoltTemp) //check max volt
+            {
+                MaxVoltTemp = cellVoltage[(h * numberOfCellsPerSlaveMax)+g];
+                CellMax = CellCnt + 1;
+            }
+            if(cellVoltage[(h * numberOfCellsPerSlaveMax)+g] > 1000)//1000mV threshold check cell present
+            {
+                CellCnt++;
+                Vtotal = Vtotal + cellVoltage[(h * numberOfCellsPerSlaveMax)+g];
+
+                if(cellVoltage[(h * numberOfCellsPerSlaveMax)+g] < MinVoltTemp)//check min volt
+                {
+                    MinVoltTemp = cellVoltage[(h * numberOfCellsPerSlaveMax)+g];
+                    CellMin = CellCnt;
+                }
+            }
+        }
+
+        for (int j = 0; j < numberOfTempsPerSlaveMax; j++) //go through all Temps
+        {
+            if(cellBlockTemp[j + (3 * h)] > MinTempTemp)
+            {
+                MinTempTemp  = cellBlockTemp[j + (3 * h)];
+            }
+
+            if(cellBlockTemp[j + (3 * h)] < MaxTempTemp)
+            {
+                MaxTempTemp  = cellBlockTemp[j + (3 * h)];
+            }
+        }
+
+    }
+
+    Param::SetInt(Param::CellMax,CellMax);
+    Param::SetInt(Param::CellMin,CellMin);
+    Param::SetFloat(Param::umax,MaxVoltTemp);
+    Param::SetFloat(Param::umin,MinVoltTemp);
+    Param::SetFloat(Param::deltaV,MaxVoltTemp-MinVoltTemp);
+    Param::SetInt(Param::CellsPresent,CellCnt);
+
+    Param::SetFloat(Param::udc, float(Vtotal*0.001));
+
+    Param::SetInt(Param::uavg,(Param::GetFloat(Param::udc)/Param::GetInt(Param::CellsPresent)*1000));
+
+    Param::SetFloat(Param::TempMax,MaxTempTemp);
+    Param::SetFloat(Param::TempMin,MinTempTemp);
+
 }

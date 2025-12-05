@@ -8,8 +8,9 @@
 #include <stdint.h>
 #include "params.h"
 #include "digio.h"
+#include <libopencm3/stm32/iwdg.h>
 
-#define numberOfSlaves 1
+#define numberOfSlavesMax 18
 
 class MAXbms
 {
@@ -20,7 +21,7 @@ public:
     static void Task100Ms();
 
 private:
-    //const uint8_t numberOfSlaves = 1;
+
 
     static void daisyChainInit();
     static uint8_t receiveBufferError();
@@ -41,6 +42,7 @@ private:
     static void measureCellData();
     static uint8_t lowByte(int data);
     static uint8_t highByte(int data);
+    static void UpdateStats();
 };
 
 

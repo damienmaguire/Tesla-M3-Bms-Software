@@ -39,7 +39,7 @@
  */
 
 //Define a version string of your firmware here
-#define VER 0.07.TA
+#define VER 0.08.TC
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -47,11 +47,11 @@
    3. Display values
  */
 //Next param id (increase when adding new parameter!): 12
-//Next value Id: 2173
+//Next value Id: 2174
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     bmstype,     TYPES,     0,      2,      0,     1   ) \
-    PARAM_ENTRY(CAT_BMS,     numbmbs,     "",        1,      4,      1,      2   ) \
+    PARAM_ENTRY(CAT_BMS,     numbmbs,     "",        1,      32,      1,      2   ) \
     PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      3   ) \
     PARAM_ENTRY(CAT_BMS,    BallVthres,     "mV",   2800,   4500,   3900,      10   ) \
     PARAM_ENTRY(CAT_BMS,     nomcap,      "Ah",      0,      1000,   100,    4   ) \
@@ -232,6 +232,7 @@
     VALUE_ENTRY(CellsBalancing,"",   2160 ) \
     VALUE_ENTRY(LoopCnt,      "",    2171 ) \
     VALUE_ENTRY(LoopState,    "",    2172 ) \
+    VALUE_ENTRY(PecErrCnt,    "",    2173 ) \
     VALUE_ENTRY(cpuload,     "%",    2129 )
 
 
