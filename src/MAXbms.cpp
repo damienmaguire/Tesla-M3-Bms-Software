@@ -22,6 +22,7 @@ static uint8_t CellsPresent = 0;
 static uint8_t loop = 0;
 static uint8_t loopstate = 0;
 static bool SetupComplete = false;
+static bool InitFailed = false;
 
 //Data
 // Variable declaration
@@ -47,7 +48,7 @@ void MAXbms::Task10Ms()
 
 void MAXbms::Task100Ms()
 {
-    if(loop == 0 && SetupComplete == true)
+    if(loop == 0 && SetupComplete == true && !InitFailed)
     {
         measureCellData();
         loopstate = 1;
@@ -143,6 +144,7 @@ void MAXbms::SpiTest()
 *******************************************/
 void MAXbms::daisyChainInit()
 {
+    static uint8_t retryCounter = 0;
     uint8_t check;
     uint8_t data[4];
     uint8_t errorByte = 0x00;
@@ -266,10 +268,19 @@ void MAXbms::daisyChainInit()
 
     if (errorByte)  // Error
     {
-        //Serial.println(errorByte, HEX);
         errorByte &= 0x00;  // Clear errors
-        //Serial.println("errorByte cleared");
+        retryCounter++;
+        if (retryCounter > 2)
+        {
+            retryCounter = 0;
+            InitFailed = true;
+            return;
+        }
         daisyChainInit();  // Redo Daisy chain init
+    }
+    else
+    {
+        retryCounter = 0;
     }
 
 }
